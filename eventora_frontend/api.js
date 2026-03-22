@@ -1,6 +1,6 @@
 
 
-const API = 'https://eventorabackend.onrender.com/api/v1/';
+const API = 'https://eventorabackend.onrender.com/api/v1';
 
 const Auth = {
   getAccess()  { return localStorage.getItem('eventora_access'); },
