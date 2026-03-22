@@ -1,8 +1,6 @@
 """
 Eventora — Django Settings
 """
-import pymysql
-pymysql.install_as_MySQLdb()
 
 
 from pathlib import Path
