@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eventora — Register</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="api.js"></script>
+<style>
+  :root { --charcoal:#313433; --cream:#FEFBC3; --burgundy:#44110E; --rose:#C68879; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--charcoal); color:var(--cream); font-family:'DM Sans',sans-serif; min-height:100vh; display:flex; flex-direction:column; }
+  h1,h2 { font-family:'Playfair Display',serif; }
+  body::before { content:''; position:fixed; inset:0; background:radial-gradient(ellipse at 20% 50%, rgba(68,17,14,0.4) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(198,136,121,0.08) 0%, transparent 50%); pointer-events:none; }
+  nav { background:var(--burgundy); border-bottom:2px solid var(--rose); }
+  .nav-inner { max-width:1200px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; padding:1rem 2rem; }
+  .logo { font-family:'Playfair Display',serif; font-size:1.25rem; font-weight:900; color:var(--cream); letter-spacing:-0.02em; text-decoration:none; }
+  .logo span { color:var(--rose); }
+  .page { flex:1; display:flex; align-items:center; justify-content:center; padding:3rem 1rem; }
+  .wrapper { width:100%; max-width:480px; }
+  .heading { text-align:center; margin-bottom:2rem; }
+  .heading h1 { font-size:2.5rem; font-weight:900; color:var(--cream); }
+  .heading p { color:var(--rose); font-size:0.9rem; margin-top:0.5rem; opacity:0.85; }
+  .card { background:rgba(254,251,195,0.04); border:1px solid rgba(198,136,121,0.2); border-radius:24px; padding:2.5rem; }
+  label { display:block; font-size:0.8rem; font-weight:600; color:var(--rose); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.4rem; }
+  .input-group { margin-bottom:1.25rem; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+  input[type=text], input[type=email], input[type=password], input[type=number], select {
+    width:100%; background:rgba(254,251,195,0.06); border:1px solid rgba(198,136,121,0.3);
+    border-radius:12px; padding:0.75rem 1rem; color:var(--cream); font-family:'DM Sans',sans-serif;
+    font-size:0.9rem; outline:none; transition:border-color 0.2s;
+  }
+  input:focus, select:focus { border-color:var(--rose); }
+  input::placeholder { opacity:0.4; }
+  select option { background:var(--charcoal); }
+  .btn-register { width:100%; background:var(--burgundy); color:var(--cream); border:2px solid var(--rose); border-radius:999px; padding:0.9rem; font-size:1rem; font-weight:700; cursor:pointer; transition:all 0.2s; margin-top:0.5rem; }
+  .btn-register:hover { background:var(--rose); color:var(--charcoal); }
+  .btn-register:disabled { opacity:0.5; cursor:not-allowed; }
+  .error-msg { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); border-radius:10px; padding:0.65rem 0.9rem; font-size:0.82rem; color:#f87171; margin-bottom:1rem; display:none; }
+  .link-text { text-align:center; font-size:0.8rem; color:var(--rose); margin-top:1.25rem; }
+  .link-text a { color:var(--cream); text-decoration:underline; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  .fade-in { animation:fadeUp 0.5s ease both; }
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="logo">Event<span>ora</span></a>
+    <a href="login.html" style="color:var(--rose);font-size:0.875rem;text-decoration:none;">← Back to Login</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="wrapper fade-in">
+    <div class="heading">
+      <h1>Create Account</h1>
+      <p>Register to discover and join campus events</p>
+    </div>
+
+    <div class="card">
+      <div class="error-msg" id="reg-error"></div>
+
+      <div class="input-group">
+        <label>Full Name</label>
+        <input type="text" id="fullName" placeholder="As per university records">
+      </div>
+
+      <div class="input-group">
+        <label>University Email</label>
+        <input type="email" id="email" placeholder="you@university.edu">
+      </div>
+
+      <div class="form-row">
+        <div class="input-group">
+          <label>Student ID</label>
+          <input type="text" id="studentId" placeholder="e.g. CS2021001">
+        </div>
+        <div class="input-group">
+          <label>Year</label>
+          <select id="year">
+            <option value="">Select year</option>
+            <option value="1">1st Year</option>
+            <option value="2">2nd Year</option>
+            <option value="3">3rd Year</option>
+            <option value="4">4th Year</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label>Department</label>
+        <select id="department">
+          <option value="">Select your department</option>
+          <option value="cs">Computer Science</option>
+          <option value="ec">Electronics & Communication</option>
+          <option value="me">Mechanical Engineering</option>
+          <option value="ba">Business Administration</option>
+          <option value="ah">Arts & Humanities</option>
+          <option value="sc">Sciences</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label>Phone Number</label>
+        <input type="text" id="phone" placeholder="+91 98765 43210">
+      </div>
+
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="At least 8 characters">
+      </div>
+
+      <div class="input-group">
+        <label>Confirm Password</label>
+        <input type="password" id="password2" placeholder="Repeat your password">
+      </div>
+
+      <button class="btn-register" id="btnRegister" onclick="handleRegister()">Create Account →</button>
+
+      <div class="link-text">Already have an account? <a href="login.html">Sign in here</a></div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  if (Auth.isLoggedIn()) {
+    window.location.href = Auth.isAdmin() ? 'admin.html' : 'index.html';
+  }
+});
+
+async function handleRegister() {
+  const errEl = document.getElementById('reg-error');
+  const btn   = document.getElementById('btnRegister');
+  errEl.style.display = 'none';
+
+  const fullName   = document.getElementById('fullName').value.trim();
+  const email      = document.getElementById('email').value.trim();
+  const studentId  = document.getElementById('studentId').value.trim();
+  const year       = document.getElementById('year').value;
+  const department = document.getElementById('department').value;
+  const phone      = document.getElementById('phone').value.trim();
+  const password   = document.getElementById('password').value;
+  const password2  = document.getElementById('password2').value;
+
+  // Validation
+  if (!fullName || !email || !password || !password2) {
+    showErr('Please fill in all required fields.'); return;
+  }
+  if (password !== password2) {
+    showErr('Passwords do not match.'); return;
+  }
+  if (password.length < 8) {
+    showErr('Password must be at least 8 characters.'); return;
+  }
+
+  btn.disabled    = true;
+  btn.textContent = 'Creating account…';
+
+  try {
+    const res  = await api.registerStudent({
+      full_name:  fullName,
+      email,
+      student_id: studentId || undefined,
+      year:       year ? parseInt(year) : undefined,
+      department: department || undefined,
+      phone:      phone || undefined,
+      password,
+      password2,
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      // Show first error from Django
+      const firstError = Object.values(data).flat()[0];
+      showErr(firstError || 'Registration failed. Please try again.');
+      return;
+    }
+
+    // Registration successful — now auto login
+    showToast('Account created! Logging you in… 🎉');
+    const loginRes  = await api.login(email, password);
+    const loginData = await loginRes.json();
+    if (loginRes.ok) {
+      Auth.save(loginData.access, loginData.refresh, loginData.user);
+      setTimeout(() => window.location.href = 'index.html', 1000);
+    } else {
+      // Registration worked, just redirect to login
+      setTimeout(() => window.location.href = 'login.html', 1000);
+    }
+
+  } catch (e) {
+    showErr('Could not connect to server. Make sure the backend is running.');
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = 'Create Account →';
+  }
+}
+
+function showErr(msg) {
+  const el = document.getElementById('reg-error');
+  el.textContent   = msg;
+  el.style.display = 'block';
+}
+
+// Enter key submits
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') handleRegister();
+});
+</script>
+</body>
+</html>

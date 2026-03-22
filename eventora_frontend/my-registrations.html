@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eventora — My Registrations</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="api.js"></script>
+<style>
+  :root { --charcoal:#313433; --cream:#FEFBC3; --burgundy:#44110E; --rose:#C68879; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--charcoal); color:var(--cream); font-family:'DM Sans',sans-serif; min-height:100vh; }
+  h1,h2,h3 { font-family:'Playfair Display',serif; }
+  body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events:none; z-index:999; opacity:0.3; }
+  nav { background:var(--burgundy); border-bottom:2px solid var(--rose); position:sticky; top:0; z-index:100; }
+  .nav-inner { max-width:1200px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; padding:1rem 2rem; }
+  .logo { font-family:'Playfair Display',serif; font-size:1.25rem; font-weight:900; color:var(--cream); letter-spacing:-0.02em; text-decoration:none; }
+  .logo span { color:var(--rose); }
+  .nav-links { display:flex; gap:2rem; align-items:center; }
+  .nav-links a { color:var(--cream); text-decoration:none; font-size:0.875rem; font-weight:500; opacity:0.85; transition:opacity 0.2s; }
+  .nav-links a:hover { opacity:1; }
+  .nav-links a.active { opacity:1; border-bottom:2px solid var(--rose); padding-bottom:2px; }
+  .btn-primary { background:var(--cream); color:var(--burgundy); font-weight:700; padding:0.5rem 1.25rem; border-radius:999px; font-size:0.875rem; text-decoration:none; transition:transform 0.15s,box-shadow 0.15s; cursor:pointer; border:none; }
+  .btn-primary:hover { transform:translateY(-1px); box-shadow:0 4px 16px rgba(254,251,195,0.3); }
+  .page-header { max-width:1200px; margin:0 auto; padding:3rem 2rem 1.5rem; }
+  .section-label { font-size:0.75rem; text-transform:uppercase; letter-spacing:0.2em; color:var(--rose); margin-bottom:0.5rem; }
+  .page-title { font-size:clamp(1.75rem,3vw,2.75rem); font-weight:900; color:var(--cream); }
+  .page-sub { font-size:0.9rem; color:var(--rose); opacity:0.8; margin-top:0.4rem; }
+  .summary-strip { max-width:1200px; margin:0 auto; padding:0 2rem 2rem; display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; }
+  .summary-card { background:rgba(254,251,195,0.04); border:1px solid rgba(198,136,121,0.2); border-radius:16px; padding:1.25rem 1.5rem; display:flex; align-items:center; gap:1rem; }
+  .summary-icon { font-size:1.75rem; flex-shrink:0; }
+  .summary-num { font-family:'Playfair Display',serif; font-size:1.75rem; font-weight:900; color:var(--cream); line-height:1; }
+  .summary-label { font-size:0.75rem; color:var(--rose); text-transform:uppercase; letter-spacing:0.08em; margin-top:0.2rem; }
+  .controls { max-width:1200px; margin:0 auto; padding:0 2rem 1.5rem; display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; }
+  .search-wrap { flex:1; min-width:220px; position:relative; }
+  .search-wrap input { width:100%; background:rgba(254,251,195,0.06); border:1px solid rgba(198,136,121,0.3); border-radius:999px; padding:0.55rem 1rem 0.55rem 2.5rem; color:var(--cream); font-family:'DM Sans',sans-serif; font-size:0.875rem; outline:none; transition:border-color 0.2s; }
+  .search-wrap input:focus { border-color:var(--rose); }
+  .search-wrap input::placeholder { opacity:0.4; }
+  .search-icon { position:absolute; left:0.85rem; top:50%; transform:translateY(-50%); font-size:0.85rem; opacity:0.5; }
+  .filter-pill { background:transparent; border:1px solid rgba(198,136,121,0.35); color:var(--cream); border-radius:999px; padding:0.4rem 1rem; font-size:0.8rem; cursor:pointer; transition:all 0.2s; white-space:nowrap; }
+  .filter-pill.active,.filter-pill:hover { background:var(--rose); color:var(--charcoal); border-color:var(--rose); }
+  .main-layout { max-width:1200px; margin:0 auto; padding:0 2rem 4rem; display:grid; grid-template-columns:1fr 300px; gap:1.5rem; align-items:start; }
+  .reg-list { display:flex; flex-direction:column; gap:1rem; }
+  .reg-card { background:rgba(254,251,195,0.04); border:1px solid rgba(198,136,121,0.2); border-radius:20px; overflow:hidden; transition:border-color 0.25s; display:grid; grid-template-columns:80px 1fr auto; }
+  .reg-card:hover { border-color:var(--rose); }
+  .reg-card-banner { background:rgba(68,17,14,0.5); display:flex; align-items:center; justify-content:center; font-size:2rem; min-height:100px; }
+  .reg-card-body { padding:1.25rem 1.5rem; }
+  .reg-card-actions { padding:1.25rem 1.5rem; display:flex; flex-direction:column; align-items:flex-end; justify-content:space-between; gap:0.75rem; border-left:1px solid rgba(198,136,121,0.1); min-width:150px; }
+  .event-tag { display:inline-block; background:var(--burgundy); color:var(--rose); font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; padding:0.2rem 0.6rem; border-radius:999px; margin-bottom:0.5rem; }
+  .reg-title { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:var(--cream); margin-bottom:0.4rem; }
+  .reg-meta { font-size:0.78rem; color:var(--rose); opacity:0.8; display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:0.6rem; }
+  .reg-id { font-size:0.72rem; color:var(--cream); opacity:0.4; font-family:monospace; }
+  .badge { display:inline-flex; align-items:center; gap:0.3rem; padding:0.25rem 0.65rem; border-radius:999px; font-size:0.7rem; font-weight:600; }
+  .badge-confirmed { background:rgba(110,231,183,0.12); color:#6ee7b7; border:1px solid rgba(110,231,183,0.25); }
+  .badge-pending { background:rgba(198,136,121,0.15); color:var(--rose); border:1px solid rgba(198,136,121,0.3); }
+  .badge-cancelled { background:rgba(239,68,68,0.1); color:#f87171; border:1px solid rgba(239,68,68,0.2); }
+  .badge-attended { background:rgba(254,251,195,0.1); color:var(--cream); border:1px solid rgba(254,251,195,0.2); }
+  .btn-sm { padding:0.45rem 1rem; border-radius:999px; font-size:0.78rem; font-weight:600; cursor:pointer; transition:all 0.2s; border:none; white-space:nowrap; }
+  .btn-download { background:rgba(254,251,195,0.08); color:var(--cream); border:1px solid rgba(198,136,121,0.3) !important; }
+  .btn-download:hover { background:var(--cream); color:var(--burgundy); }
+  .btn-cancel { background:transparent; color:#f87171; border:1px solid rgba(239,68,68,0.3) !important; }
+  .btn-cancel:hover { background:rgba(239,68,68,0.15); }
+  .btn-pay-pending { background:var(--burgundy); color:var(--cream); border:1px solid var(--rose) !important; }
+  .btn-pay-pending:hover { background:var(--rose); color:var(--charcoal); }
+  .sidebar-right { display:flex; flex-direction:column; gap:1rem; }
+  .side-card { background:rgba(254,251,195,0.04); border:1px solid rgba(198,136,121,0.2); border-radius:20px; padding:1.5rem; }
+  .side-title { font-family:'Playfair Display',serif; font-size:1rem; color:var(--cream); margin-bottom:1rem; }
+  .modal-overlay { position:fixed; inset:0; background:rgba(49,52,51,0.92); z-index:200; display:flex; align-items:center; justify-content:center; padding:1rem; opacity:0; pointer-events:none; transition:opacity 0.25s; }
+  .modal-overlay.open { opacity:1; pointer-events:all; }
+  .modal { background:var(--charcoal); border:1px solid var(--rose); border-radius:24px; max-width:460px; width:100%; padding:2.5rem; position:relative; transform:translateY(20px); transition:transform 0.25s; }
+  .modal-overlay.open .modal { transform:translateY(0); }
+  .modal-close { position:absolute; top:1rem; right:1.25rem; background:none; border:none; color:var(--rose); font-size:1.5rem; cursor:pointer; line-height:1; }
+  .ticket { background:var(--burgundy); border:1px solid var(--rose); border-radius:16px; padding:1.5rem; margin:1.25rem 0; position:relative; overflow:hidden; }
+  .ticket::before { content:''; position:absolute; left:-12px; top:50%; transform:translateY(-50%); width:24px; height:24px; background:var(--charcoal); border-radius:50%; border:1px solid var(--rose); }
+  .ticket::after { content:''; position:absolute; right:-12px; top:50%; transform:translateY(-50%); width:24px; height:24px; background:var(--charcoal); border-radius:50%; border:1px solid var(--rose); }
+  .ticket-divider { border:none; border-top:1px dashed rgba(198,136,121,0.4); margin:1rem 0; }
+  .ticket-emoji { font-size:2.5rem; text-align:center; display:block; margin-bottom:0.75rem; }
+  .ticket-name { font-family:'Playfair Display',serif; font-size:1.25rem; font-weight:900; color:var(--cream); text-align:center; }
+  .ticket-sub { font-size:0.75rem; color:var(--rose); text-align:center; margin-top:0.25rem; opacity:0.8; }
+  .ticket-row { display:flex; justify-content:space-between; margin-top:0.5rem; }
+  .ticket-key { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--rose); opacity:0.7; }
+  .ticket-val { font-size:0.8rem; color:var(--cream); font-weight:600; }
+  .qr-placeholder { width:80px; height:80px; background:var(--cream); border-radius:8px; margin:1rem auto 0; display:flex; align-items:center; justify-content:center; font-size:0.55rem; color:var(--charcoal); text-align:center; font-weight:700; letter-spacing:0.05em; }
+  .btn-full { width:100%; background:var(--burgundy); color:var(--cream); border:2px solid var(--rose); border-radius:999px; padding:0.8rem; font-size:0.95rem; font-weight:700; cursor:pointer; transition:all 0.2s; }
+  .btn-full:hover { background:var(--rose); color:var(--charcoal); }
+  .skeleton { background:rgba(254,251,195,0.05); border-radius:20px; height:120px; animation:pulse 1.5s ease infinite; }
+  @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:0.8} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  .fade-up { animation:fadeUp 0.5s ease both; }
+  .fade-up-2 { animation:fadeUp 0.5s 0.1s ease both; }
+  .fade-up-3 { animation:fadeUp 0.5s 0.2s ease both; }
+  @media(max-width:900px){ .main-layout{grid-template-columns:1fr;} .summary-strip{grid-template-columns:1fr 1fr;} .reg-card{grid-template-columns:60px 1fr;} .reg-card-actions{grid-column:1/-1;flex-direction:row;border-left:none;border-top:1px solid rgba(198,136,121,0.1);padding:1rem 1.5rem;} }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="logo">Event<span>ora</span></a>
+    <div class="nav-links">
+      <a href="index.html">Events</a>
+      <a href="my-registrations.html" class="active">My Registrations</a>
+      <button id="nav-logout" class="btn-primary" style="display:none;">Logout</button>
+    </div>
+  </div>
+</nav>
+
+<div class="page-header fade-up">
+  <p class="section-label">Student Dashboard</p>
+  <h1 class="page-title">My Registrations</h1>
+  <p class="page-sub" id="pageSubtitle">Track, manage and download tickets for all your registered events</p>
+</div>
+
+<!-- Summary Strip -->
+<div class="summary-strip fade-up-2">
+  <div class="summary-card"><div class="summary-icon">🎟</div><div><div class="summary-num" id="statTotal">—</div><div class="summary-label">Total Registered</div></div></div>
+  <div class="summary-card"><div class="summary-icon">✅</div><div><div class="summary-num" id="statConfirmed">—</div><div class="summary-label">Confirmed</div></div></div>
+  <div class="summary-card"><div class="summary-icon">⏳</div><div><div class="summary-num" id="statPending">—</div><div class="summary-label">Pending Payment</div></div></div>
+  <div class="summary-card"><div class="summary-icon">💰</div><div><div class="summary-num" id="statSpent">—</div><div class="summary-label">Total Spent</div></div></div>
+</div>
+
+<!-- Filter Controls -->
+<div class="controls fade-up-3">
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" placeholder="Search your registrations..." id="searchInput" oninput="applyFilters()">
+  </div>
+  <button class="filter-pill active" onclick="setFilter('all',this)">All</button>
+  <button class="filter-pill" onclick="setFilter('confirmed',this)">Confirmed</button>
+  <button class="filter-pill" onclick="setFilter('pending',this)">Pending</button>
+  <button class="filter-pill" onclick="setFilter('attended',this)">Attended</button>
+  <button class="filter-pill" onclick="setFilter('cancelled',this)">Cancelled</button>
+</div>
+
+<!-- Main Layout -->
+<div class="main-layout">
+  <div>
+    <div class="reg-list" id="regList">
+      <div class="skeleton"></div>
+      <div class="skeleton"></div>
+      <div class="skeleton"></div>
+    </div>
+  </div>
+
+  <!-- Right Sidebar -->
+  <div class="sidebar-right">
+    <div class="side-card">
+      <div class="side-title">My Profile</div>
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
+        <div id="profileAvatar" style="width:48px;height:48px;background:var(--rose);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:900;color:var(--charcoal);flex-shrink:0;">?</div>
+        <div>
+          <div id="profileName" style="font-weight:700;color:var(--cream);font-size:0.9rem;">Loading…</div>
+          <div id="profileStudentId" style="font-size:0.75rem;color:var(--rose);opacity:0.8;"></div>
+          <div id="profileDept" style="font-size:0.72rem;color:var(--rose);opacity:0.6;"></div>
+        </div>
+      </div>
+      <div id="profileDetails" style="display:flex;flex-direction:column;gap:0.4rem;font-size:0.78rem;color:var(--cream);opacity:0.65;"></div>
+    </div>
+
+    <div class="side-card" id="upcomingCard" style="display:none;">
+      <div class="side-title">Upcoming Events</div>
+      <div id="upcomingList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- E-Ticket Modal -->
+<div class="modal-overlay" id="ticketModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeTicket()">✕</button>
+    <h2 style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--cream);margin-bottom:0.25rem;">E-Ticket</h2>
+    <p style="font-size:0.8rem;color:var(--rose);opacity:0.7;margin-bottom:0.5rem;">Show this at the event entrance</p>
+    <div class="ticket">
+      <span class="ticket-emoji" id="ticketEmoji">🎉</span>
+      <div class="ticket-name" id="ticketTitle"></div>
+      <div class="ticket-sub" id="ticketCategory"></div>
+      <hr class="ticket-divider">
+      <div class="ticket-row"><span class="ticket-key">Date &amp; Venue</span><span class="ticket-val" id="ticketVenue"></span></div>
+      <div class="ticket-row" style="margin-top:0.4rem;"><span class="ticket-key">Amount Paid</span><span class="ticket-val" id="ticketPrice"></span></div>
+      <div class="ticket-row" style="margin-top:0.4rem;"><span class="ticket-key">Student</span><span class="ticket-val" id="ticketStudent"></span></div>
+      <hr class="ticket-divider">
+      <div style="text-align:center;font-size:0.7rem;color:var(--rose);opacity:0.6;margin-bottom:0.25rem;" id="ticketId"></div>
+      <div class="qr-placeholder">QR CODE<br>SCAN AT<br>ENTRY</div>
+    </div>
+    <button class="btn-full" onclick="closeTicket()">Done</button>
+  </div>
+</div>
+
+<!-- Cancel Confirm Modal -->
+<div class="modal-overlay" id="cancelModal">
+  <div class="modal" style="max-width:380px;">
+    <button class="modal-close" onclick="closeCancelModal()">✕</button>
+    <div style="text-align:center;padding:0.5rem 0;">
+      <div style="font-size:2.5rem;margin-bottom:1rem;">⚠️</div>
+      <h2 style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--cream);margin-bottom:0.5rem;">Cancel Registration?</h2>
+      <p style="font-size:0.85rem;color:var(--rose);opacity:0.8;line-height:1.6;margin-bottom:1.5rem;">Cancellations are allowed up to 48 hours before the event. Refunds (if applicable) take 5–7 business days.</p>
+      <div style="display:flex;gap:0.75rem;">
+        <button style="flex:1;background:transparent;color:var(--cream);border:1px solid rgba(198,136,121,0.3);border-radius:999px;padding:0.7rem;font-size:0.875rem;font-weight:600;cursor:pointer;" onclick="closeCancelModal()">Keep It</button>
+        <button style="flex:1;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);border-radius:999px;padding:0.7rem;font-size:0.875rem;font-weight:700;cursor:pointer;" onclick="doCancel()">Yes, Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer style="border-top:1px solid rgba(198,136,121,0.15);margin-top:2rem;padding:2rem;text-align:center;color:var(--rose);font-size:0.8rem;opacity:0.6;">
+  © 2025 Eventora — University Event Coordination Platform
+</footer>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────────
+let allRegistrations = [];
+let activeFilter     = 'all';
+let regToCancel      = null;   // { id, cardEl }
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  if (!Auth.isLoggedIn() || !Auth.isStudent()) {
+    window.location.href = 'login.html';
+    return;
+  }
+  updateNav();
+  loadProfile();
+  loadRegistrations();
+});
+
+// ── Load profile ──────────────────────────────────────────────────────────────
+async function loadProfile() {
+  try {
+    const res  = await api.getProfile();
+    const user = await res.json();
+    const initials = user.full_name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
+    document.getElementById('profileAvatar').textContent    = initials;
+    document.getElementById('profileName').textContent      = user.full_name;
+    document.getElementById('profileStudentId').textContent = user.student_id || '';
+    document.getElementById('profileDept').textContent      = user.department || '';
+    document.getElementById('profileDetails').innerHTML     = `
+      <div>📧 ${user.email}</div>
+      ${user.phone ? `<div>📱 ${user.phone}</div>` : ''}
+    `;
+  } catch (e) { /* silent fail */ }
+}
+
+// ── Load registrations from API ───────────────────────────────────────────────
+async function loadRegistrations() {
+  try {
+    const res  = await api.getMyRegistrations();
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    allRegistrations = data.results || data;
+    updateStats();
+    buildUpcomingSidebar();
+    renderRegistrations(allRegistrations);
+  } catch (e) {
+    document.getElementById('regList').innerHTML = `
+      <div style="text-align:center;padding:3rem;color:var(--rose);opacity:0.7;">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">⚠️</div>
+        <div>Could not load registrations. Please try again.</div>
+      </div>`;
+  }
+}
+
+// ── Update summary stats ──────────────────────────────────────────────────────
+function updateStats() {
+  const total     = allRegistrations.length;
+  const confirmed = allRegistrations.filter(r => r.status === 'confirmed').length;
+  const pending   = allRegistrations.filter(r => r.status === 'pending').length;
+  const spent     = allRegistrations
+    .filter(r => r.status === 'confirmed' || r.status === 'attended')
+    .reduce((sum, r) => sum + parseFloat(r.amount_paid || 0), 0);
+  document.getElementById('statTotal').textContent     = total;
+  document.getElementById('statConfirmed').textContent = confirmed;
+  document.getElementById('statPending').textContent   = pending;
+  document.getElementById('statSpent').textContent     = spent > 0 ? '₹' + spent : '₹0';
+}
+
+// ── Build upcoming events sidebar ─────────────────────────────────────────────
+function buildUpcomingSidebar() {
+  const upcoming = allRegistrations
+    .filter(r => r.status === 'confirmed' && new Date(r.event.event_date) >= new Date())
+    .sort((a,b) => new Date(a.event.event_date) - new Date(b.event.event_date))
+    .slice(0, 3);
+
+  if (!upcoming.length) return;
+
+  const card = document.getElementById('upcomingCard');
+  const list = document.getElementById('upcomingList');
+  card.style.display = 'block';
+  list.innerHTML = upcoming.map(r => `
+    <div style="display:flex;gap:0.75rem;align-items:flex-start;padding:0.75rem 0;border-bottom:1px solid rgba(198,136,121,0.08);">
+      <div style="width:8px;height:8px;border-radius:50%;background:#6ee7b7;margin-top:0.35rem;flex-shrink:0;"></div>
+      <div>
+        <div style="font-size:0.8rem;color:var(--cream);font-weight:600;">${r.event.title}</div>
+        <div style="font-size:0.72rem;color:var(--rose);opacity:0.7;margin-top:0.15rem;">📅 ${formatDate(r.event.event_date)} · 📍 ${r.event.venue}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Render registration cards ─────────────────────────────────────────────────
+function renderRegistrations(regs) {
+  const list = document.getElementById('regList');
+  if (!regs.length) {
+    list.innerHTML = `
+      <div style="text-align:center;padding:4rem 2rem;">
+        <div style="font-size:3rem;margin-bottom:1rem;">🔍</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--cream);margin-bottom:0.5rem;">No registrations found</div>
+        <div style="font-size:0.875rem;color:var(--rose);opacity:0.7;margin-bottom:1.5rem;">Try a different filter or search term</div>
+        <a href="index.html" style="display:inline-block;background:var(--burgundy);color:var(--cream);border:2px solid var(--rose);border-radius:999px;padding:0.7rem 2rem;font-size:0.9rem;font-weight:700;text-decoration:none;">Browse Events</a>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = regs.map(r => {
+    const event    = r.event;
+    const isCancelled = r.status === 'cancelled';
+    const badgeMap = {
+      confirmed: '<span class="badge badge-confirmed">● Confirmed</span>',
+      pending:   '<span class="badge badge-pending">● Pending Payment</span>',
+      cancelled: '<span class="badge badge-cancelled">✕ Cancelled</span>',
+      attended:  '<span class="badge badge-attended">✓ Attended</span>',
+    };
+
+    const actions = () => {
+      if (r.status === 'pending') return `
+        <button class="btn-sm btn-pay-pending" onclick="window.location.href='payment.html?reg_id=${r.id}&title=${encodeURIComponent(event.title)}&price=${event.registration_fee}&slug=${event.slug}'">Pay ₹${event.registration_fee}</button>
+        <button class="btn-sm btn-cancel" onclick="confirmCancel(${r.id}, this)">Cancel</button>`;
+      if (r.status === 'confirmed') return `
+        <button class="btn-sm btn-download" onclick="openTicket(${r.id})">🎟 View Ticket</button>
+        <button class="btn-sm btn-cancel" onclick="confirmCancel(${r.id}, this)">Cancel</button>`;
+      if (r.status === 'attended') return `
+        <button class="btn-sm btn-download" onclick="openTicket(${r.id})">🎟 View Ticket</button>`;
+      return `<a href="index.html" style="font-size:0.75rem;color:var(--rose);text-decoration:none;">Browse Events</a>`;
+    };
+
+    return `
+      <div class="reg-card" data-id="${r.id}" data-status="${r.status}" data-title="${event.title}" style="${isCancelled ? 'opacity:0.6' : ''}">
+        <div class="reg-card-banner" style="${isCancelled ? 'opacity:0.5' : ''}">${event.emoji || '🎉'}</div>
+        <div class="reg-card-body">
+          <div class="event-tag">${event.category_name || 'Event'}</div>
+          <div class="reg-title">${event.title}</div>
+          <div class="reg-meta">
+            <span>📅 ${formatDate(event.event_date)}</span>
+            <span>📍 ${event.venue}</span>
+          </div>
+          <div class="reg-meta" style="margin-bottom:0.75rem;">
+            <span>💰 ${parseFloat(event.registration_fee) === 0 ? 'Free' : '₹' + event.registration_fee}</span>
+          </div>
+          <div class="reg-id">REG-ID: ${r.registration_id}</div>
+        </div>
+        <div class="reg-card-actions">
+          ${badgeMap[r.status] || ''}
+          <div style="display:flex;flex-direction:column;gap:0.5rem;align-items:flex-end;">${actions()}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── Filter & Search ───────────────────────────────────────────────────────────
+function setFilter(status, btn) {
+  activeFilter = status;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+
+function applyFilters() {
+  const query = document.getElementById('searchInput').value.toLowerCase();
+  const filtered = allRegistrations.filter(r => {
+    const statusMatch = activeFilter === 'all' || r.status === activeFilter;
+    const titleMatch  = r.event.title.toLowerCase().includes(query);
+    return statusMatch && titleMatch;
+  });
+  renderRegistrations(filtered);
+}
+
+// ── E-Ticket ──────────────────────────────────────────────────────────────────
+function openTicket(regId) {
+  const reg = allRegistrations.find(r => r.id === regId);
+  if (!reg) return;
+  const user = Auth.getUser();
+  document.getElementById('ticketEmoji').textContent    = reg.event.emoji || '🎉';
+  document.getElementById('ticketTitle').textContent    = reg.event.title;
+  document.getElementById('ticketCategory').textContent = reg.event.category_name || 'Event';
+  document.getElementById('ticketVenue').textContent    = `${formatDate(reg.event.event_date)} · ${reg.event.venue}`;
+  document.getElementById('ticketPrice').textContent    = parseFloat(reg.event.registration_fee) === 0 ? 'Free' : '₹' + reg.event.registration_fee;
+  document.getElementById('ticketStudent').textContent  = user?.full_name || '';
+  document.getElementById('ticketId').textContent       = reg.registration_id;
+  document.getElementById('ticketModal').classList.add('open');
+}
+
+function closeTicket() { document.getElementById('ticketModal').classList.remove('open'); }
+
+// ── Cancel flow ───────────────────────────────────────────────────────────────
+function confirmCancel(regId, btn) {
+  regToCancel = { id: regId, cardEl: btn.closest('.reg-card') };
+  document.getElementById('cancelModal').classList.add('open');
+}
+
+function closeCancelModal() {
+  document.getElementById('cancelModal').classList.remove('open');
+  regToCancel = null;
+}
+
+async function doCancel() {
+  if (!regToCancel) return;
+  try {
+    const res = await api.cancelRegistration(regToCancel.id);
+    if (!res.ok) {
+      const data = await res.json();
+      showToast(data.detail || 'Could not cancel registration.', 'error');
+      closeCancelModal();
+      return;
+    }
+    // Update local state
+    const reg = allRegistrations.find(r => r.id === regToCancel.id);
+    if (reg) reg.status = 'cancelled';
+    updateStats();
+    applyFilters();
+    showToast('Registration cancelled successfully.');
+  } catch (e) {
+    showToast('Could not cancel. Please try again.', 'error');
+  }
+  closeCancelModal();
+}
+
+// ── Utils ──────────────────────────────────────────────────────────────────────
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+}
+
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', function(e) {
+    if (e.target === this) { closeTicket(); closeCancelModal(); }
+  });
+});
+</script>
+</body>
+</html>

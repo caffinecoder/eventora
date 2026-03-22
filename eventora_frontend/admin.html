@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eventora — Admin Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="api.js"></script>
+<style>
+  :root{--charcoal:#313433;--cream:#FEFBC3;--burgundy:#44110E;--rose:#C68879;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--charcoal);color:var(--cream);font-family:'DM Sans',sans-serif;display:flex;min-height:100vh;}
+  h1,h2,h3{font-family:'Playfair Display',serif;}
+  .sidebar{width:240px;background:var(--burgundy);border-right:1px solid rgba(198,136,121,0.25);display:flex;flex-direction:column;padding:1.5rem 1rem;min-height:100vh;flex-shrink:0;}
+  .logo{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;color:var(--cream);padding:0.5rem 0.75rem;margin-bottom:0.5rem;}
+  .logo span{color:var(--rose);}
+  .logo-sub{font-size:0.65rem;color:var(--rose);text-transform:uppercase;letter-spacing:0.15em;padding:0 0.75rem;margin-bottom:2rem;opacity:0.7;}
+  .nav-item{display:flex;align-items:center;gap:0.75rem;padding:0.65rem 0.75rem;border-radius:12px;color:var(--cream);text-decoration:none;font-size:0.875rem;font-weight:500;opacity:0.7;transition:all 0.2s;cursor:pointer;border:none;background:none;width:100%;text-align:left;margin-bottom:0.25rem;}
+  .nav-item:hover,.nav-item.active{background:rgba(254,251,195,0.1);opacity:1;}
+  .nav-item.active{background:rgba(198,136,121,0.2);}
+  .nav-section{font-size:0.65rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--rose);opacity:0.5;padding:0.75rem 0.75rem 0.25rem;margin-top:0.5rem;}
+  .sidebar-footer{margin-top:auto;padding-top:1rem;border-top:1px solid rgba(198,136,121,0.2);}
+  .admin-chip{display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.75rem;}
+  .admin-avatar{width:32px;height:32px;background:var(--rose);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:var(--charcoal);flex-shrink:0;}
+  .admin-info{font-size:0.75rem;}
+  .admin-name{color:var(--cream);font-weight:600;}
+  .admin-role{color:var(--rose);opacity:0.7;}
+  .main{flex:1;padding:2rem;overflow-x:hidden;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;}
+  .page-title{font-size:1.75rem;font-weight:900;color:var(--cream);}
+  .page-sub{font-size:0.85rem;color:var(--rose);opacity:0.75;margin-top:0.2rem;}
+  .topbar-actions{display:flex;gap:0.75rem;}
+  .btn-sm{padding:0.5rem 1.25rem;border-radius:999px;font-size:0.8rem;font-weight:600;cursor:pointer;transition:all 0.2s;border:none;}
+  .btn-primary-sm{background:var(--cream);color:var(--burgundy);}
+  .btn-primary-sm:hover{opacity:0.9;}
+  .btn-outline-sm{background:transparent;color:var(--cream);border:1px solid var(--rose)!important;}
+  .btn-outline-sm:hover{background:var(--rose);color:var(--charcoal);}
+  .btn-danger-sm{background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3)!important;}
+  .btn-danger-sm:hover{background:rgba(239,68,68,0.3);}
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem;}
+  .stat-card{background:rgba(254,251,195,0.04);border:1px solid rgba(198,136,121,0.2);border-radius:16px;padding:1.25rem 1.5rem;}
+  .stat-icon{font-size:1.5rem;margin-bottom:0.5rem;}
+  .stat-num{font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:var(--cream);}
+  .stat-label{font-size:0.75rem;color:var(--rose);text-transform:uppercase;letter-spacing:0.08em;margin-top:0.2rem;}
+  .panels{display:grid;grid-template-columns:1fr 340px;gap:1.5rem;}
+  .panel{background:rgba(254,251,195,0.03);border:1px solid rgba(198,136,121,0.18);border-radius:20px;padding:1.5rem;}
+  .panel-title{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--cream);margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;}
+  table{width:100%;border-collapse:collapse;}
+  th{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--rose);padding:0.5rem 0.75rem;text-align:left;border-bottom:1px solid rgba(198,136,121,0.15);}
+  td{font-size:0.85rem;color:var(--cream);padding:0.75rem;border-bottom:1px solid rgba(198,136,121,0.08);vertical-align:middle;}
+  tr:last-child td{border:none;}
+  tr:hover td{background:rgba(254,251,195,0.03);}
+  .badge{display:inline-block;padding:0.2rem 0.6rem;border-radius:999px;font-size:0.7rem;font-weight:600;}
+  .badge-open{background:rgba(110,231,183,0.15);color:#6ee7b7;}
+  .badge-closed{background:rgba(239,68,68,0.15);color:#f87171;}
+  .badge-pending{background:rgba(198,136,121,0.2);color:var(--rose);}
+  .badge-draft{background:rgba(254,251,195,0.1);color:var(--cream);}
+  .td-actions button{background:none;border:none;color:var(--rose);cursor:pointer;font-size:0.8rem;margin-right:0.5rem;transition:color 0.2s;}
+  .td-actions button:hover{color:var(--cream);}
+  .activity-item{display:flex;gap:0.75rem;padding:0.75rem 0;border-bottom:1px solid rgba(198,136,121,0.08);}
+  .activity-item:last-child{border:none;}
+  .activity-dot{width:8px;height:8px;border-radius:50%;background:var(--rose);margin-top:0.35rem;flex-shrink:0;}
+  .activity-text{font-size:0.8rem;color:var(--cream);opacity:0.8;line-height:1.5;}
+  .activity-time{font-size:0.7rem;color:var(--rose);opacity:0.6;margin-top:0.2rem;}
+  .modal-overlay{position:fixed;inset:0;background:rgba(49,52,51,0.92);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem;opacity:0;pointer-events:none;transition:opacity 0.25s;}
+  .modal-overlay.open{opacity:1;pointer-events:all;}
+  .modal{background:var(--charcoal);border:1px solid var(--rose);border-radius:24px;max-width:560px;width:100%;padding:2rem;position:relative;max-height:90vh;overflow-y:auto;transform:translateY(20px);transition:transform 0.25s;}
+  .modal-overlay.open .modal{transform:translateY(0);}
+  .modal-close{position:absolute;top:1rem;right:1.25rem;background:none;border:none;color:var(--rose);font-size:1.5rem;cursor:pointer;}
+  .modal-title{font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--cream);margin-bottom:1.5rem;}
+  label{display:block;font-size:0.75rem;font-weight:600;color:var(--rose);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.35rem;}
+  input[type=text],input[type=date],input[type=number],input[type=time],select,textarea{width:100%;background:rgba(254,251,195,0.06);border:1px solid rgba(198,136,121,0.3);border-radius:12px;padding:0.65rem 1rem;color:var(--cream);font-family:'DM Sans',sans-serif;font-size:0.875rem;outline:none;transition:border-color 0.2s;}
+  input:focus,select:focus,textarea:focus{border-color:var(--rose);}
+  textarea{resize:vertical;min-height:80px;}
+  select option{background:var(--charcoal);}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+  .form-group{margin-bottom:1rem;}
+  .btn-create{background:var(--burgundy);color:var(--cream);border:2px solid var(--rose);border-radius:999px;padding:0.8rem;font-size:0.95rem;font-weight:700;cursor:pointer;transition:all 0.2s;width:100%;margin-top:0.5rem;}
+  .btn-create:hover{background:var(--rose);color:var(--charcoal);}
+  .btn-create:disabled{opacity:0.5;cursor:not-allowed;}
+  .section-page{display:none;}
+  .section-page.active{display:block;}
+  .empty-row td{text-align:center;color:var(--rose);opacity:0.6;padding:2rem;}
+  .cat-hint{font-size:0.72rem;color:var(--rose);opacity:0.7;margin-top:0.3rem;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  .fade-in{animation:fadeUp 0.4s ease both;}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="logo">Event<span>ora</span></div>
+  <div class="logo-sub">Admin Panel</div>
+  <div class="nav-section">Overview</div>
+  <button class="nav-item active" onclick="showSection('dashboard',this)">📊 Dashboard</button>
+  <button class="nav-item" onclick="showSection('events',this)">🎉 Events</button>
+  <button class="nav-item" onclick="showSection('registrations',this)">📋 Registrations</button>
+  <div class="nav-section">Manage</div>
+  <button class="nav-item" onclick="showSection('payments',this)">💰 Payments</button>
+  <div class="sidebar-footer">
+    <div class="admin-chip">
+      <div class="admin-avatar" id="sidebarAvatar">AD</div>
+      <div class="admin-info">
+        <div class="admin-name" id="sidebarName">Admin</div>
+        <div class="admin-role" id="sidebarRole">Admin</div>
+      </div>
+    </div>
+    <button class="nav-item" onclick="handleLogout()" style="margin-top:0.5rem;">🚪 Logout</button>
+  </div>
+</aside>
+
+<!-- Main Content -->
+<main class="main">
+
+  <!-- Dashboard -->
+  <div class="section-page active fade-in" id="section-dashboard">
+    <div class="topbar">
+      <div><div class="page-title">Dashboard</div><div class="page-sub">Overview of all event activities</div></div>
+      <div class="topbar-actions">
+        <button class="btn-sm btn-primary-sm" onclick="openCreateModal()">+ Create Event</button>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-icon">🎉</div><div class="stat-num" id="statEvents">—</div><div class="stat-label">Total Events</div></div>
+      <div class="stat-card"><div class="stat-icon">🎟</div><div class="stat-num" id="statRegs">—</div><div class="stat-label">Registrations</div></div>
+      <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-num" id="statRevenue">—</div><div class="stat-label">Revenue</div></div>
+      <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-num" id="statConfirmed">—</div><div class="stat-label">Confirmed</div></div>
+    </div>
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-title">Recent Events <span style="font-size:0.75rem;color:var(--rose);font-family:'DM Sans',sans-serif;cursor:pointer;" onclick="showSection('events',document.querySelectorAll('.nav-item')[1])">View all →</span></div>
+        <table>
+          <thead><tr><th>Event</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="dashboardEventsTable"><tr class="empty-row"><td colspan="4">Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Recent Registrations</div>
+        <div id="activityFeed"><div style="font-size:0.8rem;color:var(--rose);opacity:0.6;padding:1rem 0;">Loading…</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Events Management -->
+  <div class="section-page fade-in" id="section-events">
+    <div class="topbar">
+      <div><div class="page-title">Events</div><div class="page-sub">Manage all events</div></div>
+      <div class="topbar-actions">
+        <button class="btn-sm btn-primary-sm" onclick="openCreateModal()">+ Create Event</button>
+      </div>
+    </div>
+    <div class="panel">
+      <table>
+        <thead><tr><th>Event</th><th>Category</th><th>Date</th><th>Venue</th><th>Capacity</th><th>Price</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="eventsTable"><tr class="empty-row"><td colspan="8">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Registrations -->
+  <div class="section-page fade-in" id="section-registrations">
+    <div class="topbar">
+      <div><div class="page-title">Registrations</div><div class="page-sub">All student registrations</div></div>
+    </div>
+    <div class="panel">
+      <table>
+        <thead><tr><th>Reg ID</th><th>Student</th><th>Event</th><th>Amount</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="regsTable"><tr class="empty-row"><td colspan="7">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Payments -->
+  <div class="section-page fade-in" id="section-payments">
+    <div class="topbar">
+      <div><div class="page-title">Payments</div><div class="page-sub">Financial transactions overview</div></div>
+    </div>
+    <div class="stats-row" style="grid-template-columns:repeat(3,1fr);">
+      <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-num" id="payRevenue">—</div><div class="stat-label">Total Revenue</div></div>
+      <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-num" id="paySuccess">—</div><div class="stat-label">Successful</div></div>
+      <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-num" id="payPending">—</div><div class="stat-label">Pending</div></div>
+    </div>
+    <div class="panel">
+      <table>
+        <thead><tr><th>Transaction ID</th><th>Student</th><th>Event</th><th>Amount</th><th>Method</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="paymentsTable"><tr class="empty-row"><td colspan="8">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<!-- Create / Edit Event Modal -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeCreateModal()">✕</button>
+    <div class="modal-title" id="modalHeading">Create New Event</div>
+    <input type="hidden" id="editEventId">
+
+    <div class="form-group">
+      <label>Event Title *</label>
+      <input type="text" id="evTitle" placeholder="e.g. Machine Learning Workshop">
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Category *</label>
+        <select id="evCategory"><option value="">Select category</option></select>
+        <div class="cat-hint" id="catHint"></div>
+      </div>
+      <div class="form-group">
+        <label>Emoji Icon</label>
+        <input type="text" id="evEmoji" placeholder="e.g. 🎤" maxlength="4">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Event Date *</label>
+        <input type="date" id="evDate">
+      </div>
+      <div class="form-group">
+        <label>Start Time</label>
+        <input type="time" id="evTime">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Venue *</label>
+        <input type="text" id="evVenue" placeholder="e.g. Hall A">
+      </div>
+      <div class="form-group">
+        <label>Capacity</label>
+        <input type="number" id="evCapacity" placeholder="100" min="1">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Registration Fee (₹)</label>
+        <input type="number" id="evFee" placeholder="0 for free" min="0">
+      </div>
+      <div class="form-group">
+        <label>Registration Deadline</label>
+        <input type="datetime-local" id="evDeadline">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Department</label>
+      <input type="text" id="evDept" placeholder="All Departments">
+    </div>
+
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="evDesc" placeholder="Describe the event…"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Status</label>
+      <select id="evStatus">
+        <option value="draft">Draft</option>
+        <option value="open">Open</option>
+        <option value="closed">Closed</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+    </div>
+
+    <button class="btn-create" id="btnSaveEvent" onclick="saveEvent()">Create Event →</button>
+  </div>
+</div>
+
+<script>
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  if (!Auth.isLoggedIn() || !Auth.isAdmin()) {
+    window.location.href = 'login.html';
+    return;
+  }
+  loadAdminInfo();
+  loadDashboard();
+  loadCategories();
+});
+
+// ── Admin info in sidebar ─────────────────────────────────────────────────────
+function loadAdminInfo() {
+  const user = Auth.getUser();
+  if (!user) return;
+  const initials = user.full_name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('sidebarAvatar').textContent = initials;
+  document.getElementById('sidebarName').textContent   = user.full_name;
+  document.getElementById('sidebarRole').textContent   = user.admin_role || 'Admin';
+}
+
+async function handleLogout() {
+  await api.logout();
+  window.location.href = 'login.html';
+}
+
+// ── Section navigation ────────────────────────────────────────────────────────
+function showSection(name, btn) {
+  document.querySelectorAll('.section-page').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (name === 'events')        loadEvents();
+  if (name === 'registrations') loadRegistrations();
+  if (name === 'payments')      loadPayments();
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const res  = await api.getAdminStats();
+    const data = await res.json();
+    document.getElementById('statEvents').textContent    = data.total_events || 0;
+    document.getElementById('statRegs').textContent      = data.total_registrations || 0;
+    const rev = parseFloat(data.total_revenue || 0);
+    document.getElementById('statRevenue').textContent   = rev >= 1000 ? '₹' + (rev/1000).toFixed(0) + 'k' : '₹' + rev;
+    document.getElementById('statConfirmed').textContent = data.confirmed_registrations || 0;
+  } catch (e) { /* silent */ }
+
+  try {
+    const res  = await api.getAdminEvents({ ordering: '-created_at' });
+    const data = await res.json();
+    const events = (data.results || data).slice(0, 5);
+    const tbody  = document.getElementById('dashboardEventsTable');
+    if (!events.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="4">No events yet.</td></tr>'; return; }
+    tbody.innerHTML = events.map(e => `
+      <tr>
+        <td>${e.emoji || '🎉'} ${e.title}</td>
+        <td>${formatDate(e.event_date)}</td>
+        <td>${statusBadge(e.status)}</td>
+        <td class="td-actions">
+          <button onclick="editEvent(${e.id})">✏️</button>
+          <button onclick="deleteEvent(${e.id},'${e.title}')">🗑</button>
+        </td>
+      </tr>`).join('');
+  } catch (e) { /* silent */ }
+
+  try {
+    const res  = await api.getAdminRegistrations({ ordering: '-registered_at' });
+    const data = await res.json();
+    const regs = (data.results || data).slice(0, 6);
+    document.getElementById('activityFeed').innerHTML = regs.map(r => `
+      <div class="activity-item">
+        <div class="activity-dot"></div>
+        <div>
+          <div class="activity-text">${r.student_name} registered for <strong>${r.event.title}</strong></div>
+          <div class="activity-time">${timeAgo(r.registered_at)}</div>
+        </div>
+      </div>`).join('') || '<div style="font-size:0.8rem;color:var(--rose);opacity:0.6;padding:1rem 0;">No recent activity.</div>';
+  } catch (e) { /* silent */ }
+}
+
+// ── Events Section ────────────────────────────────────────────────────────────
+async function loadEvents() {
+  const tbody = document.getElementById('eventsTable');
+  tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Loading…</td></tr>';
+  try {
+    const res  = await api.getAdminEvents({ ordering: '-created_at' });
+    const data = await res.json();
+    const events = data.results || data;
+    if (!events.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No events yet. Create your first event!</td></tr>'; return; }
+    tbody.innerHTML = events.map(e => `
+      <tr>
+        <td>${e.emoji || '🎉'} ${e.title}</td>
+        <td>${e.category_name || '—'}</td>
+        <td>${formatDate(e.event_date)}</td>
+        <td>${e.venue}</td>
+        <td>${e.capacity}</td>
+        <td>${parseFloat(e.registration_fee) === 0 ? 'Free' : '₹' + e.registration_fee}</td>
+        <td>${statusBadge(e.status)}</td>
+        <td class="td-actions">
+          <button onclick="editEvent(${e.id})" title="Edit">✏️</button>
+          <button onclick="deleteEvent(${e.id},'${e.title}')" title="Delete">🗑</button>
+        </td>
+      </tr>`).join('');
+  } catch (e) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Failed to load events.</td></tr>';
+  }
+}
+
+// ── Registrations Section ─────────────────────────────────────────────────────
+async function loadRegistrations() {
+  const tbody = document.getElementById('regsTable');
+  tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Loading…</td></tr>';
+  try {
+    const res  = await api.getAdminRegistrations({ ordering: '-registered_at' });
+    const data = await res.json();
+    const regs = data.results || data;
+    if (!regs.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No registrations yet.</td></tr>'; return; }
+    tbody.innerHTML = regs.map(r => `
+      <tr>
+        <td style="font-family:monospace;font-size:0.75rem;">${r.registration_id}</td>
+        <td>${r.student_name}<br><span style="font-size:0.72rem;opacity:0.55;">${r.student_email}</span></td>
+        <td>${r.event.title}</td>
+        <td>${parseFloat(r.amount_paid) === 0 ? 'Free' : '₹' + r.amount_paid}</td>
+        <td>${formatDate(r.registered_at)}</td>
+        <td>${statusBadge(r.status)}</td>
+        <td class="td-actions">
+          ${r.status === 'confirmed' ? `<button onclick="markAttended(${r.id})" title="Mark Attended">✅</button>` : ''}
+        </td>
+      </tr>`).join('');
+  } catch (e) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Failed to load registrations.</td></tr>';
+  }
+}
+
+async function markAttended(id) {
+  try {
+    await apiFetch(`/registrations/admin/${id}/status/`, { method:'PATCH', body: JSON.stringify({ status:'attended' }) });
+    showToast('Marked as attended.');
+    loadRegistrations();
+  } catch (e) { showToast('Failed to update.', 'error'); }
+}
+
+// ── Payments Section ──────────────────────────────────────────────────────────
+async function loadPayments() {
+  const tbody = document.getElementById('paymentsTable');
+  tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Loading…</td></tr>';
+  try {
+    const res  = await api.getAdminPayments({ ordering: '-created_at' });
+    const data = await res.json();
+    const payments = data.results || data;
+
+    const success  = payments.filter(p => p.status === 'success');
+    const pending  = payments.filter(p => p.status === 'pending');
+    const revenue  = success.reduce((s, p) => s + parseFloat(p.amount), 0);
+    document.getElementById('payRevenue').textContent = revenue > 0 ? '₹' + revenue.toLocaleString('en-IN') : '₹0';
+    document.getElementById('paySuccess').textContent = success.length;
+    document.getElementById('payPending').textContent = pending.length;
+
+    if (!payments.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No payments yet.</td></tr>'; return; }
+    tbody.innerHTML = payments.map(p => `
+      <tr>
+        <td style="font-family:monospace;font-size:0.72rem;">${p.transaction_id}</td>
+        <td>${p.student_name || '—'}</td>
+        <td>${p.event_title || '—'}</td>
+        <td>₹${p.amount}</td>
+        <td style="text-transform:capitalize;">${p.method}</td>
+        <td>${formatDate(p.created_at)}</td>
+        <td>${paymentBadge(p.status)}</td>
+        <td class="td-actions">
+          ${p.status === 'success' ? `<button onclick="refundPayment('${p.transaction_id}')" title="Refund">↩️</button>` : ''}
+        </td>
+      </tr>`).join('');
+  } catch (e) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Failed to load payments.</td></tr>';
+  }
+}
+
+async function refundPayment(txnId) {
+  if (!confirm(`Refund transaction ${txnId}? This will also cancel the registration.`)) return;
+  try {
+    const res = await apiFetch(`/payments/admin/${txnId}/refund/`, { method:'POST' });
+    const data = await res.json();
+    showToast(data.detail || 'Refund processed.');
+    loadPayments();
+  } catch (e) { showToast('Refund failed.', 'error'); }
+}
+
+// ── Categories ────────────────────────────────────────────────────────────────
+let categories = [];
+
+async function loadCategories() {
+  try {
+    const res = await api.getCategories();
+
+    // If the response isn't ok, show a hint so the admin knows to add categories first
+    if (!res.ok) {
+      document.getElementById('catHint').textContent = 'Could not load categories. Check backend.';
+      return;
+    }
+
+    const data = await res.json();
+    categories = data.results || data;   // handle both paginated and plain list
+
+    const sel = document.getElementById('evCategory');
+    // Clear all options except the placeholder
+    sel.innerHTML = '<option value="">Select category</option>';
+
+    if (categories.length === 0) {
+      // No categories exist yet — tell the admin
+      const opt = document.createElement('option');
+      opt.disabled = true;
+      opt.textContent = '— No categories yet. Add via Django admin —';
+      sel.appendChild(opt);
+      document.getElementById('catHint').textContent =
+        'Add categories at /admin before creating events.';
+      return;
+    }
+
+    categories.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value       = c.id;
+      opt.textContent = c.name;
+      sel.appendChild(opt);
+    });
+
+  } catch (e) {
+    document.getElementById('catHint').textContent = 'Network error loading categories.';
+  }
+}
+
+// ── Create / Edit Event Modal ─────────────────────────────────────────────────
+function openCreateModal() {
+  document.getElementById('modalHeading').textContent  = 'Create New Event';
+  document.getElementById('editEventId').value         = '';
+  document.getElementById('btnSaveEvent').textContent  = 'Create Event →';
+  ['evTitle','evEmoji','evVenue','evDesc','evDept'].forEach(id => document.getElementById(id).value = '');
+  ['evCapacity','evFee'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('evDate').value     = '';
+  document.getElementById('evTime').value     = '';
+  document.getElementById('evDeadline').value = '';
+  document.getElementById('evStatus').value   = 'open';
+  document.getElementById('evCategory').value = '';
+  document.getElementById('createModal').classList.add('open');
+}
+
+async function editEvent(id) {
+  try {
+    const res = await apiFetch(`/events/admin/${id}/`);
+    const e   = await res.json();
+    document.getElementById('modalHeading').textContent  = 'Edit Event';
+    document.getElementById('editEventId').value         = e.id;
+    document.getElementById('evTitle').value             = e.title;
+    document.getElementById('evEmoji').value             = e.emoji || '';
+    document.getElementById('evDate').value              = e.event_date;
+    document.getElementById('evTime').value              = e.start_time?.substring(0,5) || '';
+    document.getElementById('evVenue').value             = e.venue;
+    document.getElementById('evCapacity').value          = e.capacity;
+    document.getElementById('evFee').value               = e.registration_fee;
+    document.getElementById('evDeadline').value          = e.registration_deadline?.substring(0,16) || '';
+    document.getElementById('evDept').value              = e.department || '';
+    document.getElementById('evDesc').value              = e.description;
+    document.getElementById('evStatus').value            = e.status;
+    document.getElementById('evCategory').value          = e.category?.id || '';
+    document.getElementById('btnSaveEvent').textContent  = 'Save Changes →';
+    document.getElementById('createModal').classList.add('open');
+  } catch (err) {
+    showToast('Could not load event details.', 'error');
+  }
+}
+
+async function saveEvent() {
+  const btn    = document.getElementById('btnSaveEvent');
+  const editId = document.getElementById('editEventId').value;
+
+  // ── Validation ──────────────────────────────────────────────────────────────
+  const title      = document.getElementById('evTitle').value.trim();
+  const eventDate  = document.getElementById('evDate').value;
+  const venue      = document.getElementById('evVenue').value.trim();
+  const categoryId = document.getElementById('evCategory').value;
+  const startTime  = document.getElementById('evTime').value;
+  const deadline   = document.getElementById('evDeadline').value;
+
+  if (!title)     { showToast('Event title is required.', 'error'); return; }
+  if (!eventDate) { showToast('Event date is required.', 'error'); return; }
+  if (!venue)     { showToast('Venue is required.', 'error'); return; }
+  if (!categoryId){ showToast('Please select a category.', 'error'); return; }
+
+  // Build payload — only include non-empty optional fields
+  const payload = {
+    title,
+    event_date:       eventDate,            // already YYYY-MM-DD from <input type="date">
+    venue,
+    category_id:      parseInt(categoryId),
+    emoji:            document.getElementById('evEmoji').value.trim() || '🎉',
+    capacity:         parseInt(document.getElementById('evCapacity').value) || 100,
+    registration_fee: parseFloat(document.getElementById('evFee').value) || 0,
+    department:       document.getElementById('evDept').value.trim() || 'All Departments',
+    description:      document.getElementById('evDesc').value.trim(),
+    status:           document.getElementById('evStatus').value,
+  };
+
+  // Only add time fields if they have values — avoids sending empty strings
+  if (startTime) payload.start_time = startTime + ':00';
+  if (deadline)  payload.registration_deadline = deadline;  // datetime-local → ISO-like string
+
+  btn.disabled    = true;
+  btn.textContent = editId ? 'Saving…' : 'Creating…';
+
+  try {
+    const res  = editId
+      ? await api.updateEvent(editId, payload)
+      : await api.createEvent(payload);
+    const data = await res.json();
+
+    if (!res.ok) {
+      // Show the first meaningful error from Django
+      const msg = Object.values(data).flat().join(' ');
+      showToast(msg || 'Failed to save event.', 'error');
+      return;
+    }
+
+    showToast(editId ? 'Event updated successfully!' : 'Event created! 🎉');
+    closeCreateModal();
+    loadEvents();
+    loadDashboard();
+
+  } catch (e) {
+    showToast('Something went wrong. Check the console.', 'error');
+    console.error(e);
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = editId ? 'Save Changes →' : 'Create Event →';
+  }
+}
+
+async function deleteEvent(id, title) {
+  if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
+  try {
+    await api.deleteEvent(id);
+    showToast(`"${title}" deleted.`);
+    loadEvents();
+    loadDashboard();
+  } catch (e) {
+    showToast('Could not delete event.', 'error');
+  }
+}
+
+function closeCreateModal() {
+  document.getElementById('createModal').classList.remove('open');
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function statusBadge(status) {
+  const map = {
+    open:      '<span class="badge badge-open">Open</span>',
+    closed:    '<span class="badge badge-closed">Closed</span>',
+    cancelled: '<span class="badge badge-closed">Cancelled</span>',
+    draft:     '<span class="badge badge-draft">Draft</span>',
+    confirmed: '<span class="badge badge-open">Confirmed</span>',
+    pending:   '<span class="badge badge-pending">Pending</span>',
+    attended:  '<span class="badge badge-draft">Attended</span>',
+  };
+  return map[status] || `<span class="badge badge-draft">${status}</span>`;
+}
+
+function paymentBadge(status) {
+  const map = {
+    success:  '<span class="badge badge-open">Success</span>',
+    failed:   '<span class="badge badge-closed">Failed</span>',
+    pending:  '<span class="badge badge-pending">Pending</span>',
+    refunded: '<span class="badge badge-draft">Refunded</span>',
+  };
+  return map[status] || status;
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+}
+
+function timeAgo(dateStr) {
+  if (!dateStr) return '';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins  = Math.floor(diff / 60000);
+  if (mins < 1)  return 'just now';
+  if (mins < 60) return mins + ' mins ago';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)  return hrs + ' hr' + (hrs > 1 ? 's' : '') + ' ago';
+  return Math.floor(hrs / 24) + ' day(s) ago';
+}
+
+document.getElementById('createModal').addEventListener('click', function(e) {
+  if (e.target === this) closeCreateModal();
+});
+</script>
+</body>
+</html>

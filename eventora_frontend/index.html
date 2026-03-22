@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eventora — Event Coordination & Registration</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="api.js"></script>
+<style>
+  :root { --charcoal:#313433; --cream:#FEFBC3; --burgundy:#44110E; --rose:#C68879; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--charcoal); color:var(--cream); font-family:'DM Sans',sans-serif; min-height:100vh; }
+  h1,h2,h3 { font-family:'Playfair Display',serif; }
+  body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events:none; z-index:999; opacity:0.3; }
+  nav { background:var(--burgundy); border-bottom:2px solid var(--rose); position:sticky; top:0; z-index:100; }
+  .nav-inner { max-width:1200px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; padding:1rem 2rem; }
+  .logo { font-family:'Playfair Display',serif; font-size:1.25rem; font-weight:900; color:var(--cream); letter-spacing:-0.02em; text-decoration:none; }
+  .logo span { color:var(--rose); }
+  .nav-links { display:flex; gap:2rem; align-items:center; }
+  .nav-links a { color:var(--cream); text-decoration:none; font-size:0.875rem; font-weight:500; opacity:0.85; transition:opacity 0.2s; }
+  .nav-links a:hover { opacity:1; }
+  .btn-primary { background:var(--cream); color:var(--burgundy); font-weight:700; padding:0.5rem 1.25rem; border-radius:999px; font-size:0.875rem; text-decoration:none; transition:transform 0.15s,box-shadow 0.15s; cursor:pointer; border:none; }
+  .btn-primary:hover { transform:translateY(-1px); box-shadow:0 4px 16px rgba(254,251,195,0.3); }
+  .hero { width:100%; background:var(--charcoal); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:6rem 2rem 5rem; border-bottom:1px solid rgba(198,136,121,0.15); }
+  .hero-title { font-family:'Playfair Display',serif; font-size:clamp(3rem,8vw,6rem); font-weight:900; color:var(--cream); letter-spacing:-0.02em; line-height:1.05; animation:fadeUp 0.7s ease both; }
+  .hero-sub { font-size:clamp(0.95rem,2vw,1.15rem); color:var(--rose); opacity:0.85; margin-top:1rem; animation:fadeUp 0.7s 0.15s ease both; }
+  .btn-hero { display:inline-block; margin-top:2.25rem; background:var(--burgundy); color:var(--cream); border:2px solid var(--rose); border-radius:999px; padding:0.85rem 2.5rem; font-size:1rem; font-weight:700; text-decoration:none; cursor:pointer; transition:background 0.2s,color 0.2s,transform 0.15s; animation:fadeUp 0.7s 0.3s ease both; }
+  .btn-hero:hover { background:var(--rose); color:var(--charcoal); transform:translateY(-2px); }
+  .section { max-width:1200px; margin:0 auto; padding:3rem 2rem; }
+  .section-label { font-size:0.75rem; text-transform:uppercase; letter-spacing:0.2em; color:var(--rose); margin-bottom:0.5rem; }
+  .section-title { font-size:clamp(1.75rem,3vw,2.5rem); font-weight:900; color:var(--cream); margin-bottom:2rem; }
+  .events-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:1.5rem; }
+  .event-card { background:rgba(254,251,195,0.04); border:1px solid rgba(198,136,121,0.2); border-radius:20px; overflow:hidden; transition:transform 0.25s,border-color 0.25s; cursor:pointer; }
+  .event-card:hover { transform:translateY(-4px); border-color:var(--rose); }
+  .event-card-banner { height:140px; display:flex; align-items:center; justify-content:center; font-size:2.5rem; }
+  .event-card-body { padding:1.5rem; }
+  .event-tag { display:inline-block; background:var(--burgundy); color:var(--rose); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em; padding:0.2rem 0.6rem; border-radius:999px; margin-bottom:0.75rem; }
+  .event-title { font-family:'Playfair Display',serif; font-size:1.25rem; font-weight:700; color:var(--cream); margin-bottom:0.5rem; }
+  .event-meta { font-size:0.8rem; color:var(--rose); opacity:0.8; display:flex; gap:1rem; margin-bottom:1rem; }
+  .event-desc { font-size:0.875rem; color:var(--cream); opacity:0.65; line-height:1.6; margin-bottom:1.25rem; }
+  .btn-register { width:100%; background:var(--burgundy); color:var(--cream); border:1px solid var(--rose); border-radius:999px; padding:0.6rem 1rem; font-size:0.875rem; font-weight:600; cursor:pointer; transition:all 0.2s; }
+  .btn-register:hover { background:var(--rose); color:var(--charcoal); }
+  .filter-bar { display:flex; gap:0.75rem; margin-bottom:2rem; flex-wrap:wrap; }
+  .filter-pill { background:transparent; border:1px solid rgba(198,136,121,0.35); color:var(--cream); border-radius:999px; padding:0.4rem 1rem; font-size:0.8rem; cursor:pointer; transition:all 0.2s; }
+  .filter-pill.active,.filter-pill:hover { background:var(--rose); color:var(--charcoal); border-color:var(--rose); }
+  .upcoming-badge { display:inline-block; background:rgba(68,17,14,0.6); border:1px solid var(--rose); color:var(--rose); font-size:0.7rem; padding:0.15rem 0.5rem; border-radius:4px; margin-left:0.5rem; vertical-align:middle; }
+  .skeleton { background:rgba(254,251,195,0.06); border-radius:20px; height:320px; animation:pulse 1.5s ease infinite; }
+  @keyframes pulse { 0%,100%{opacity:0.5} 50%{opacity:1} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+  .fade-up { animation:fadeUp 0.6s ease both; }
+  .modal-overlay { position:fixed; inset:0; background:rgba(49,52,51,0.92); z-index:200; display:flex; align-items:center; justify-content:center; padding:1rem; opacity:0; pointer-events:none; transition:opacity 0.25s; }
+  .modal-overlay.open { opacity:1; pointer-events:all; }
+  .modal { background:var(--charcoal); border:1px solid var(--rose); border-radius:24px; max-width:500px; width:100%; padding:2.5rem; position:relative; transform:translateY(20px); transition:transform 0.25s; max-height:90vh; overflow-y:auto; }
+  .modal-overlay.open .modal { transform:translateY(0); }
+  .modal-close { position:absolute; top:1rem; right:1.25rem; background:none; border:none; color:var(--rose); font-size:1.5rem; cursor:pointer; line-height:1; }
+  .modal-tag { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.15em; color:var(--rose); margin-bottom:0.5rem; }
+  .modal-title { font-family:'Playfair Display',serif; font-size:2rem; font-weight:900; color:var(--cream); margin-bottom:1rem; }
+  .modal-meta { display:flex; gap:1.5rem; margin-bottom:1rem; font-size:0.85rem; color:var(--rose); flex-wrap:wrap; }
+  .modal-desc { font-size:0.9rem; color:var(--cream); opacity:0.75; line-height:1.7; margin-bottom:1.5rem; }
+  .modal-price { font-family:'Playfair Display',serif; font-size:1.5rem; color:var(--cream); margin-bottom:1.5rem; }
+  .modal-price span { font-size:0.85rem; opacity:0.6; font-family:'DM Sans',sans-serif; }
+  .btn-pay { width:100%; background:var(--burgundy); color:var(--cream); border:2px solid var(--rose); border-radius:999px; padding:0.875rem; font-size:1rem; font-weight:700; cursor:pointer; transition:all 0.2s; }
+  .btn-pay:hover { background:var(--rose); color:var(--charcoal); }
+  .btn-pay:disabled { opacity:0.5; cursor:not-allowed; }
+  footer { border-top:1px solid rgba(198,136,121,0.15); margin-top:4rem; padding:2rem; text-align:center; color:var(--rose); font-size:0.8rem; opacity:0.6; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="logo">Event<span>ora</span></a>
+    <div class="nav-links">
+      <a href="index.html">Events</a>
+      <a href="my-registrations.html" id="nav-my-regs" style="display:none;">My Registrations</a>
+      <span id="nav-username" style="font-size:0.875rem;color:var(--rose);opacity:0.85;"></span>
+      <button id="nav-logout" class="btn-primary" style="display:none;">Logout</button>
+      <a href="login.html" class="btn-primary" id="nav-login">Login</a>
+    </div>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1 class="hero-title">Eventora</h1>
+  <p class="hero-sub">Discover, register and attend events across your campus</p>
+  <a href="#events" class="btn-hero">Browse Events</a>
+</div>
+
+<div class="section" id="events">
+  <p class="section-label">Browse</p>
+  <h2 class="section-title">Events &amp; Upcoming Events</h2>
+
+  <div class="filter-bar" id="filterBar">
+    <button class="filter-pill active" onclick="filterEvents('all',this)">All Events</button>
+    <!-- Category pills injected by JS -->
+  </div>
+
+  <div class="events-grid" id="eventsGrid">
+    <!-- Skeletons shown while loading -->
+    <div class="skeleton"></div>
+    <div class="skeleton"></div>
+    <div class="skeleton"></div>
+  </div>
+</div>
+
+<!-- Event Detail Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modalBanner" style="font-size:3rem;margin-bottom:1rem;text-align:center;"></div>
+    <p class="modal-tag" id="modalTag"></p>
+    <h2 class="modal-title" id="modalTitle"></h2>
+    <div class="modal-meta">
+      <span id="modalDate"></span>
+      <span id="modalVenue"></span>
+      <span id="modalSeats"></span>
+    </div>
+    <p class="modal-desc" id="modalDesc"></p>
+    <div class="modal-price" id="modalPrice"></div>
+    <button class="btn-pay" id="btnPay" onclick="goToPay()">Pay Now &amp; Confirm Registration</button>
+  </div>
+</div>
+
+<footer>© 2025 Eventora — University Event Coordination Platform</footer>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────────
+let allEvents    = [];     // full list from API
+let filtered     = [];     // currently displayed
+let activeFilter = 'all';
+let selectedEvent = null;
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  updateNav();
+  loadCategories();
+  loadEvents();
+});
+
+// ── Load categories → build filter pills ─────────────────────────────────────
+async function loadCategories() {
+  try {
+    const res  = await api.getCategories();
+    const data = await res.json();
+    const bar  = document.getElementById('filterBar');
+    data.forEach(cat => {
+      const btn = document.createElement('button');
+      btn.className = 'filter-pill';
+      btn.textContent = cat.name + 's';
+      btn.onclick = () => filterEvents(cat.slug, btn);
+      bar.appendChild(btn);
+    });
+  } catch (e) {
+    // Filter bar works fine with just "All" if categories fail
+  }
+}
+
+// ── Load events from API ──────────────────────────────────────────────────────
+async function loadEvents(params = {}) {
+  try {
+    const res  = await api.getEvents(params);
+    if (!res.ok) throw new Error('Failed to load events');
+    const data = await res.json();
+    // DRF pagination → results array; or plain array
+    allEvents = data.results || data;
+    renderEvents(allEvents);
+  } catch (e) {
+    document.getElementById('eventsGrid').innerHTML = `
+      <div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--rose);opacity:0.7;">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">⚠️</div>
+        <div>Could not load events. Make sure the backend server is running.</div>
+      </div>`;
+  }
+}
+
+// ── Render event cards ────────────────────────────────────────────────────────
+function renderEvents(events) {
+  const grid = document.getElementById('eventsGrid');
+  if (!events.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--rose);opacity:0.7;">No events found.</div>`;
+    return;
+  }
+  grid.innerHTML = events.map(e => `
+    <div class="event-card fade-up" onclick="openModal('${e.slug}')">
+      <div class="event-card-banner" style="background:rgba(68,17,14,0.4);">${e.emoji || '🎉'}</div>
+      <div class="event-card-body">
+        <div class="event-tag">${e.category_name || 'Event'}</div>
+        <div class="event-title">
+          ${e.title}
+          ${e.is_free ? '<span class="upcoming-badge">Free</span>' : ''}
+          ${e.spots_remaining <= 5 && e.spots_remaining > 0 ? `<span class="upcoming-badge" style="background:rgba(251,191,36,0.15);border-color:#fbbf24;color:#fbbf24;">Only ${e.spots_remaining} left</span>` : ''}
+        </div>
+        <div class="event-meta">
+          <span>📅 ${formatDate(e.event_date)}</span>
+          <span>📍 ${e.venue}</span>
+        </div>
+        <button class="btn-register" onclick="event.stopPropagation();openModal('${e.slug}')">
+          ${e.is_free ? 'Register Free →' : `Register — ₹${e.registration_fee}`}
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Filter events client-side ─────────────────────────────────────────────────
+function filterEvents(cat, btn) {
+  activeFilter = cat;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  if (cat === 'all') {
+    renderEvents(allEvents);
+  } else {
+    // Re-fetch from API with category filter for accurate server-side results
+    loadEvents({ category: cat });
+  }
+}
+
+// ── Open event detail modal ───────────────────────────────────────────────────
+async function openModal(slug) {
+  // Show modal immediately with loading state
+  document.getElementById('modalTitle').textContent = 'Loading…';
+  document.getElementById('modalBanner').textContent = '⏳';
+  document.getElementById('modalTag').textContent = '';
+  document.getElementById('modalDesc').textContent = '';
+  document.getElementById('modalDate').textContent = '';
+  document.getElementById('modalVenue').textContent = '';
+  document.getElementById('modalSeats').textContent = '';
+  document.getElementById('modalPrice').innerHTML = '';
+  document.getElementById('modalOverlay').classList.add('open');
+
+  try {
+    const res  = await api.getEventDetail(slug);
+    if (!res.ok) throw new Error();
+    const e = await res.json();
+    selectedEvent = e;
+
+    document.getElementById('modalBanner').textContent  = e.emoji || '🎉';
+    document.getElementById('modalTag').textContent      = e.category?.name || '';
+    document.getElementById('modalTitle').textContent    = e.title;
+    document.getElementById('modalDate').textContent     = '📅 ' + formatDate(e.event_date) + ' at ' + formatTime(e.start_time);
+    document.getElementById('modalVenue').textContent    = '📍 ' + e.venue;
+    document.getElementById('modalSeats').textContent    = e.is_full ? '❌ Fully Booked' : `🎟 ${e.spots_remaining} spots left`;
+    document.getElementById('modalDesc').textContent     = e.description;
+    document.getElementById('modalPrice').innerHTML      = e.is_free
+      ? '<span style="color:var(--rose)">Free Event</span>'
+      : `₹${e.registration_fee} <span>/ per person</span>`;
+
+    const btn = document.getElementById('btnPay');
+    if (e.is_full) {
+      btn.textContent = 'Fully Booked';
+      btn.disabled = true;
+    } else if (e.status !== 'open') {
+      btn.textContent = 'Registration Closed';
+      btn.disabled = true;
+    } else {
+      btn.textContent = e.is_free ? 'Register Free' : 'Pay Now & Confirm Registration';
+      btn.disabled = false;
+    }
+  } catch (err) {
+    document.getElementById('modalTitle').textContent = 'Could not load event details.';
+  }
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  selectedEvent = null;
+}
+
+// ── Register / Pay ────────────────────────────────────────────────────────────
+async function goToPay() {
+  if (!selectedEvent) return;
+
+  // Must be logged in
+  if (!Auth.isLoggedIn()) {
+    showToast('Please log in to register for events.', 'error');
+    setTimeout(() => window.location.href = 'login.html', 1500);
+    return;
+  }
+
+  const btn = document.getElementById('btnPay');
+  btn.disabled = true;
+  btn.textContent = 'Registering…';
+
+  try {
+    // Step 1: Create registration
+    const regRes  = await api.register(selectedEvent.id);
+    const regData = await regRes.json();
+
+    if (!regRes.ok) {
+      showToast(regData.event?.[0] || regData.detail || 'Registration failed.', 'error');
+      btn.disabled = false;
+      btn.textContent = selectedEvent.is_free ? 'Register Free' : 'Pay Now & Confirm Registration';
+      return;
+    }
+
+    // Step 2: If free → already confirmed, go to My Registrations
+    if (selectedEvent.is_free) {
+      showToast('Successfully registered! 🎉');
+      setTimeout(() => window.location.href = 'my-registrations.html', 1500);
+    } else {
+      // Step 3: Paid event → go to payment page with registration id
+      window.location.href = `payment.html?reg_id=${regData.id}&title=${encodeURIComponent(selectedEvent.title)}&price=${selectedEvent.registration_fee}&slug=${selectedEvent.slug}`;
+    }
+  } catch (e) {
+    showToast('Something went wrong. Please try again.', 'error');
+    btn.disabled = false;
+    btn.textContent = 'Pay Now & Confirm Registration';
+  }
+}
+
+// ── Utils ──────────────────────────────────────────────────────────────────────
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+}
+
+function formatTime(timeStr) {
+  if (!timeStr) return '';
+  const [h, m] = timeStr.split(':');
+  const d = new Date(); d.setHours(h, m);
+  return d.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+}
+
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+</body>
+</html>

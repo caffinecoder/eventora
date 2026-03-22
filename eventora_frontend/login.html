@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eventora — Login</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="api.js"></script>
+<style>
+  :root { --charcoal:#313433; --cream:#FEFBC3; --burgundy:#44110E; --rose:#C68879; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--charcoal); color:var(--cream); font-family:'DM Sans',sans-serif; min-height:100vh; display:flex; flex-direction:column; }
+  h1,h2 { font-family:'Playfair Display',serif; }
+  body::before { content:''; position:fixed; inset:0; background:radial-gradient(ellipse at 20% 50%, rgba(68,17,14,0.4) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(198,136,121,0.08) 0%, transparent 50%); pointer-events:none; }
+  nav { background:var(--burgundy); border-bottom:2px solid var(--rose); }
+  .nav-inner { max-width:1200px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; padding:1rem 2rem; }
+  .logo { font-family:'Playfair Display',serif; font-size:1.25rem; font-weight:900; color:var(--cream); letter-spacing:-0.02em; text-decoration:none; }
+  .logo span { color:var(--rose); }
+  .page { flex:1; display:flex; align-items:center; justify-content:center; padding:3rem 1rem; }
+  .login-wrapper { width:100%; max-width:440px; }
+  .login-heading { text-align:center; margin-bottom:2rem; }
+  .login-heading h1 { font-size:2.5rem; font-weight:900; color:var(--cream); }
+  .login-heading p { color:var(--rose); font-size:0.9rem; margin-top:0.5rem; opacity:0.85; }
+  .tab-switcher { display:flex; background:rgba(254,251,195,0.06); border:1px solid rgba(198,136,121,0.25); border-radius:999px; padding:4px; margin-bottom:2rem; }
+  .tab-btn { flex:1; padding:0.6rem; border-radius:999px; border:none; font-family:'DM Sans',sans-serif; font-size:0.875rem; font-weight:600; cursor:pointer; transition:all 0.25s; background:transparent; color:var(--cream); opacity:0.6; }
+  .tab-btn.active { background:var(--burgundy); color:var(--cream); opacity:1; box-shadow:0 2px 12px rgba(68,17,14,0.5); }
+  .card { background:rgba(254,251,195,0.04); border:1px solid rgba(198,136,121,0.2); border-radius:24px; padding:2.5rem; }
+  label { display:block; font-size:0.8rem; font-weight:600; color:var(--rose); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.4rem; }
+  .input-group { margin-bottom:1.25rem; }
+  input[type=text], input[type=email], input[type=password], select {
+    width:100%; background:rgba(254,251,195,0.06); border:1px solid rgba(198,136,121,0.3);
+    border-radius:12px; padding:0.75rem 1rem; color:var(--cream); font-family:'DM Sans',sans-serif;
+    font-size:0.9rem; outline:none; transition:border-color 0.2s;
+  }
+  input:focus, select:focus { border-color:var(--rose); }
+  input::placeholder { opacity:0.4; }
+  select option { background:var(--charcoal); }
+  .btn-login { width:100%; background:var(--burgundy); color:var(--cream); border:2px solid var(--rose); border-radius:999px; padding:0.9rem; font-size:1rem; font-weight:700; cursor:pointer; transition:all 0.2s; margin-top:0.5rem; }
+  .btn-login:hover { background:var(--rose); color:var(--charcoal); }
+  .btn-login:disabled { opacity:0.5; cursor:not-allowed; }
+  .error-msg { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); border-radius:10px; padding:0.65rem 0.9rem; font-size:0.82rem; color:#f87171; margin-bottom:1rem; display:none; }
+  .divider { display:flex; align-items:center; gap:1rem; margin:1.25rem 0; }
+  .divider hr { flex:1; border:none; border-top:1px solid rgba(198,136,121,0.2); }
+  .divider span { font-size:0.75rem; color:var(--rose); opacity:0.6; }
+  .link-text { text-align:center; font-size:0.8rem; color:var(--rose); margin-top:1rem; }
+  .link-text a { color:var(--cream); text-decoration:underline; }
+  .admin-notice { background:rgba(68,17,14,0.4); border:1px solid rgba(198,136,121,0.3); border-radius:12px; padding:0.75rem 1rem; margin-bottom:1.5rem; font-size:0.8rem; color:var(--rose); display:flex; gap:0.5rem; align-items:center; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  .fade-in { animation:fadeUp 0.5s ease both; }
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="logo">Event<span>ora</span></a>
+    <a href="index.html" style="color:var(--rose);font-size:0.875rem;text-decoration:none;">← Back to Events</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="login-wrapper fade-in">
+    <div class="login-heading">
+      <h1>Welcome Back</h1>
+      <p>Sign in to manage and track your events</p>
+    </div>
+
+    <div class="tab-switcher">
+      <button class="tab-btn active" onclick="switchTab('student', this)">🎓 Student</button>
+      <button class="tab-btn" onclick="switchTab('admin', this)">⚙️ Admin</button>
+    </div>
+
+    <!-- Student Login -->
+    <div id="form-student" class="card">
+      <div class="error-msg" id="student-error"></div>
+      <div class="input-group">
+        <label>Student Email</label>
+        <input type="email" id="student-email" placeholder="you@university.edu">
+      </div>
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" id="student-password" placeholder="••••••••">
+      </div>
+      <button class="btn-login" id="btn-student-login" onclick="handleStudentLogin()">Sign In as Student</button>
+      <div class="divider"><hr><span>or</span><hr></div>
+      <div class="link-text">Don't have an account? <a href="register.html">Register here</a></div>
+    </div>
+
+    <!-- Admin Login -->
+    <div id="form-admin" class="card" style="display:none;">
+      <div class="admin-notice">🔐 Admin access is restricted to authorized faculty and staff only.</div>
+      <div class="error-msg" id="admin-error"></div>
+      <div class="input-group">
+        <label>Admin Email</label>
+        <input type="email" id="admin-email" placeholder="admin@university.edu">
+      </div>
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" id="admin-password" placeholder="••••••••">
+      </div>
+      <button class="btn-login" id="btn-admin-login" onclick="handleAdminLogin()">Sign In as Admin</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Redirect if already logged in
+document.addEventListener('DOMContentLoaded', () => {
+  if (Auth.isLoggedIn()) {
+    window.location.href = Auth.isAdmin() ? 'admin.html' : 'index.html';
+  }
+});
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('form-student').style.display = tab === 'student' ? 'block' : 'none';
+  document.getElementById('form-admin').style.display   = tab === 'admin'   ? 'block' : 'none';
+}
+
+// ── Student Login ──────────────────────────────────────────────────────────────
+async function handleStudentLogin() {
+  const email    = document.getElementById('student-email').value.trim();
+  const password = document.getElementById('student-password').value;
+  const errEl    = document.getElementById('student-error');
+  const btn      = document.getElementById('btn-student-login');
+
+  errEl.style.display = 'none';
+
+  if (!email || !password) {
+    showError(errEl, 'Please enter your email and password.');
+    return;
+  }
+
+  btn.disabled    = true;
+  btn.textContent = 'Signing in…';
+
+  try {
+    const res  = await api.login(email, password);
+    const data = await res.json();
+
+    if (!res.ok) {
+      showError(errEl, data.detail || 'Invalid email or password.');
+      return;
+    }
+
+    if (data.user.role !== 'student') {
+      showError(errEl, 'This account is not a student account. Please use the Admin tab.');
+      return;
+    }
+
+    Auth.save(data.access, data.refresh, data.user);
+    showToast('Welcome back, ' + data.user.full_name.split(' ')[0] + '! 👋');
+    setTimeout(() => window.location.href = 'index.html', 800);
+
+  } catch (e) {
+    showError(errEl, 'Could not connect to server. Make sure the backend is running.');
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = 'Sign In as Student';
+  }
+}
+
+// ── Admin Login ────────────────────────────────────────────────────────────────
+async function handleAdminLogin() {
+  const email    = document.getElementById('admin-email').value.trim();
+  const password = document.getElementById('admin-password').value;
+  const errEl    = document.getElementById('admin-error');
+  const btn      = document.getElementById('btn-admin-login');
+
+  errEl.style.display = 'none';
+
+  if (!email || !password) {
+    showError(errEl, 'Please enter your email and password.');
+    return;
+  }
+
+  btn.disabled    = true;
+  btn.textContent = 'Signing in…';
+
+  try {
+    const res  = await api.login(email, password);
+    const data = await res.json();
+
+    if (!res.ok) {
+      showError(errEl, data.detail || 'Invalid email or password.');
+      return;
+    }
+
+    if (data.user.role !== 'admin') {
+      showError(errEl, 'This account does not have admin access.');
+      return;
+    }
+
+    Auth.save(data.access, data.refresh, data.user);
+    showToast('Welcome, ' + data.user.full_name.split(' ')[0] + '! Redirecting to dashboard…');
+    setTimeout(() => window.location.href = 'admin.html', 800);
+
+  } catch (e) {
+    showError(errEl, 'Could not connect to server. Make sure the backend is running.');
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = 'Sign In as Admin';
+  }
+}
+
+// ── Allow Enter key to submit ──────────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+  const adminVisible = document.getElementById('form-admin').style.display !== 'none';
+  if (adminVisible) handleAdminLogin();
+  else handleStudentLogin();
+});
+
+function showError(el, msg) {
+  el.textContent    = msg;
+  el.style.display  = 'block';
+}
+</script>
+</body>
+</html>

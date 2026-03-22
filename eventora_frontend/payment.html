@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eventora — Payment</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="api.js"></script>
+<style>
+  :root{--charcoal:#313433;--cream:#FEFBC3;--burgundy:#44110E;--rose:#C68879;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--charcoal);color:var(--cream);font-family:'DM Sans',sans-serif;min-height:100vh;}
+  h1,h2{font-family:'Playfair Display',serif;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 70% 80%,rgba(68,17,14,0.35) 0%,transparent 60%);pointer-events:none;}
+  nav{background:var(--burgundy);border-bottom:2px solid var(--rose);}
+  .nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;}
+  .logo{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:900;color:var(--cream);text-decoration:none;}
+  .logo span{color:var(--rose);}
+  .page{max-width:900px;margin:3rem auto;padding:0 1.5rem;display:grid;grid-template-columns:1fr 380px;gap:2rem;align-items:start;}
+  .card{background:rgba(254,251,195,0.04);border:1px solid rgba(198,136,121,0.22);border-radius:24px;padding:2rem;}
+  .card-title{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--cream);margin-bottom:1.5rem;}
+  label{display:block;font-size:0.75rem;font-weight:600;color:var(--rose);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.35rem;}
+  input[type=text],input[type=email],input[type=number]{width:100%;background:rgba(254,251,195,0.06);border:1px solid rgba(198,136,121,0.3);border-radius:12px;padding:0.7rem 1rem;color:var(--cream);font-family:'DM Sans',sans-serif;font-size:0.875rem;outline:none;transition:border-color 0.2s;}
+  input:focus{border-color:var(--rose);}
+  input::placeholder{opacity:0.4;}
+  input:read-only{opacity:0.6;cursor:default;}
+  .form-group{margin-bottom:1rem;}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+  .divider{border:none;border-top:1px solid rgba(198,136,121,0.15);margin:1.25rem 0;}
+  .card-input-wrap{position:relative;}
+  .card-input-wrap input{padding-right:3rem;}
+  .card-icon{position:absolute;right:1rem;top:50%;transform:translateY(-50%);font-size:1.2rem;}
+  .pay-methods{display:flex;gap:0.75rem;margin-bottom:1.5rem;}
+  .pay-method{flex:1;border:1.5px solid rgba(198,136,121,0.25);border-radius:12px;padding:0.75rem;text-align:center;cursor:pointer;transition:all 0.2s;font-size:0.8rem;color:var(--cream);opacity:0.7;}
+  .pay-method.active,.pay-method:hover{border-color:var(--rose);opacity:1;background:rgba(198,136,121,0.1);}
+  .pay-method .method-icon{font-size:1.5rem;margin-bottom:0.3rem;}
+  .summary-event{display:flex;gap:1rem;background:rgba(68,17,14,0.3);border-radius:16px;padding:1rem;margin-bottom:1.25rem;align-items:center;}
+  .summary-emoji{font-size:2rem;}
+  .summary-tag{font-size:0.65rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--rose);}
+  .summary-title{font-family:'Playfair Display',serif;font-size:1rem;color:var(--cream);}
+  .summary-meta{font-size:0.75rem;color:var(--rose);opacity:0.75;margin-top:0.25rem;}
+  .line-items{display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1rem;}
+  .line-item{display:flex;justify-content:space-between;font-size:0.85rem;color:var(--cream);}
+  .line-item.total{font-weight:700;font-size:1rem;padding-top:0.75rem;border-top:1px solid rgba(198,136,121,0.2);margin-top:0.25rem;}
+  .line-item.total span:last-child{font-family:'Playfair Display',serif;font-size:1.25rem;}
+  .btn-pay{width:100%;background:var(--burgundy);color:var(--cream);border:2px solid var(--rose);border-radius:999px;padding:0.9rem;font-size:1rem;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:1rem;}
+  .btn-pay:hover{background:var(--rose);color:var(--charcoal);}
+  .btn-pay:disabled{opacity:0.5;cursor:not-allowed;}
+  .secure-badge{display:flex;align-items:center;justify-content:center;gap:0.5rem;font-size:0.75rem;color:var(--rose);opacity:0.6;margin-top:0.75rem;}
+  .success-overlay{position:fixed;inset:0;background:rgba(49,52,51,0.95);z-index:300;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.35s;}
+  .success-overlay.show{opacity:1;pointer-events:all;}
+  .success-card{background:var(--charcoal);border:1px solid var(--rose);border-radius:24px;padding:3rem;text-align:center;max-width:420px;width:100%;}
+  .success-icon{font-size:4rem;margin-bottom:1rem;}
+  .success-title{font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:var(--cream);margin-bottom:0.5rem;}
+  .success-sub{font-size:0.9rem;color:var(--rose);opacity:0.85;line-height:1.6;margin-bottom:1.5rem;}
+  .btn-back{display:inline-block;background:var(--cream);color:var(--burgundy);font-weight:700;padding:0.75rem 2rem;border-radius:999px;text-decoration:none;font-size:0.95rem;transition:all 0.2s;}
+  .btn-back:hover{opacity:0.9;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  .fade-in{animation:fadeUp 0.5s ease both;}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="logo">Event<span>ora</span></a>
+    <a href="index.html" style="color:var(--rose);font-size:0.875rem;text-decoration:none;">← Back to Events</a>
+  </div>
+</nav>
+
+<div class="page fade-in">
+  <!-- Payment Form -->
+  <div>
+    <h1 style="font-size:2rem;font-weight:900;color:var(--cream);margin-bottom:0.5rem;">Complete Registration</h1>
+    <p style="color:var(--rose);font-size:0.875rem;opacity:0.8;margin-bottom:2rem;">Secure payment powered by Eventora Pay</p>
+
+    <!-- Personal Details (pre-filled from logged-in user) -->
+    <div class="card" style="margin-bottom:1.5rem;">
+      <div class="card-title">Personal Details</div>
+      <div class="form-group"><label>Full Name</label><input type="text" id="fullName" placeholder="As per university records"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Student ID</label><input type="text" id="studentId" placeholder="e.g. CS2021001"></div>
+        <div class="form-group"><label>Department</label><input type="text" id="department" placeholder="e.g. Computer Science"></div>
+      </div>
+      <div class="form-group"><label>Email</label><input type="email" id="emailField" placeholder="you@university.edu"></div>
+      <div class="form-group"><label>Phone</label><input type="text" id="phone" placeholder="+91 98765 43210"></div>
+    </div>
+
+    <!-- Payment Method -->
+    <div class="card">
+      <div class="card-title">Payment Method</div>
+      <div class="pay-methods">
+        <div class="pay-method active" onclick="selectMethod(this,'card')"><div class="method-icon">💳</div>Card</div>
+        <div class="pay-method" onclick="selectMethod(this,'upi')"><div class="method-icon">📱</div>UPI</div>
+        <div class="pay-method" onclick="selectMethod(this,'net_banking')"><div class="method-icon">🏦</div>Net Banking</div>
+      </div>
+
+      <!-- Card form -->
+      <div id="card-form">
+        <div class="form-group">
+          <label>Card Number</label>
+          <div class="card-input-wrap">
+            <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19" oninput="formatCard(this)">
+            <span class="card-icon">💳</span>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Expiry Date</label><input type="text" id="cardExpiry" placeholder="MM / YY" maxlength="7" oninput="formatExpiry(this)"></div>
+          <div class="form-group"><label>CVV</label><input type="text" id="cardCvv" placeholder="•••" maxlength="3"></div>
+        </div>
+        <div class="form-group"><label>Name on Card</label><input type="text" id="cardName" placeholder="John Doe"></div>
+      </div>
+
+      <!-- UPI form -->
+      <div id="upi-form" style="display:none;">
+        <div class="form-group">
+          <label>UPI ID</label>
+          <input type="text" id="upiId" placeholder="yourname@upi">
+        </div>
+      </div>
+
+      <!-- Net Banking form -->
+      <div id="netbanking-form" style="display:none;">
+        <div class="form-group">
+          <label>Select Bank</label>
+          <select id="bankSelect" style="width:100%;background:rgba(254,251,195,0.06);border:1px solid rgba(198,136,121,0.3);border-radius:12px;padding:0.7rem 1rem;color:var(--cream);font-family:'DM Sans',sans-serif;font-size:0.875rem;outline:none;">
+            <option value="">Choose your bank</option>
+            <option>State Bank of India</option>
+            <option>HDFC Bank</option>
+            <option>ICICI Bank</option>
+            <option>Axis Bank</option>
+            <option>Kotak Mahindra Bank</option>
+            <option>Punjab National Bank</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Summary -->
+  <div>
+    <div class="card">
+      <div class="card-title">Order Summary</div>
+      <div class="summary-event">
+        <div class="summary-emoji" id="summaryEmoji">🎉</div>
+        <div>
+          <div class="summary-tag" id="summaryTag">Event</div>
+          <div class="summary-title" id="summaryTitle">Loading…</div>
+          <div class="summary-meta" id="summaryMeta"></div>
+        </div>
+      </div>
+      <div class="line-items">
+        <div class="line-item"><span>Registration Fee</span><span id="feeAmount">—</span></div>
+        <div class="line-item"><span>Platform Fee</span><span>₹0</span></div>
+        <div class="line-item total"><span>Total</span><span id="totalAmount">—</span></div>
+      </div>
+      <button class="btn-pay" id="btnPay" onclick="processPayment()">🔒 Pay &amp; Confirm</button>
+      <div class="secure-badge">🔐 256-bit SSL Encrypted · Safe &amp; Secure</div>
+    </div>
+
+    <div style="margin-top:1rem;padding:1rem;background:rgba(68,17,14,0.2);border-radius:12px;border:1px solid rgba(198,136,121,0.15);font-size:0.8rem;color:var(--rose);opacity:0.8;line-height:1.6;">
+      ℹ️ A confirmation email will be sent after successful payment. Cancellations are allowed up to 48 hours before the event.
+    </div>
+  </div>
+</div>
+
+<!-- Success Overlay -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-card">
+    <div class="success-icon">🎉</div>
+    <div class="success-title">You're Registered!</div>
+    <div class="success-sub" id="successText">Your registration has been confirmed.</div>
+    <a href="my-registrations.html" class="btn-back">View My Registrations</a>
+  </div>
+</div>
+
+<script>
+// ── Redirect to login if not logged in ────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  if (!Auth.isLoggedIn()) {
+    window.location.href = 'login.html';
+    return;
+  }
+  prefillUserDetails();
+  loadEventSummary();
+});
+
+// ── Read URL params ────────────────────────────────────────────────────────────
+const params    = new URLSearchParams(window.location.search);
+const regId     = params.get('reg_id');    // registration id from index.html
+const eventSlug = params.get('slug');
+const eventTitle = decodeURIComponent(params.get('title') || 'Event');
+const eventPrice = parseFloat(params.get('price')) || 0;
+
+let selectedMethod = 'card';
+let transactionId  = null;
+
+// ── Pre-fill logged-in user details ──────────────────────────────────────────
+async function prefillUserDetails() {
+  try {
+    const res  = await api.getProfile();
+    const user = await res.json();
+    document.getElementById('fullName').value   = user.full_name || '';
+    document.getElementById('studentId').value  = user.student_id || '';
+    document.getElementById('department').value = user.department || '';
+    document.getElementById('emailField').value = user.email || '';
+    document.getElementById('phone').value      = user.phone || '';
+    // Make read-only fields that come from the server
+    ['fullName','studentId','emailField'].forEach(id => {
+      document.getElementById(id).readOnly = true;
+    });
+  } catch (e) { /* silently fail — user can type manually */ }
+}
+
+// ── Load event details for order summary ─────────────────────────────────────
+async function loadEventSummary() {
+  document.getElementById('summaryTitle').textContent = eventTitle;
+  const feeStr = eventPrice === 0 ? 'Free' : '₹' + eventPrice;
+  document.getElementById('feeAmount').textContent  = feeStr;
+  document.getElementById('totalAmount').textContent = feeStr;
+
+  if (eventSlug) {
+    try {
+      const res = await api.getEventDetail(eventSlug);
+      const e   = await res.json();
+      document.getElementById('summaryEmoji').textContent = e.emoji || '🎉';
+      document.getElementById('summaryTag').textContent   = e.category?.name || 'Event';
+      document.getElementById('summaryMeta').textContent  = `📅 ${e.event_date} · 📍 ${e.venue}`;
+    } catch (e) { /* use URL params as fallback */ }
+  }
+}
+
+// ── Payment method selector ───────────────────────────────────────────────────
+function selectMethod(el, method) {
+  document.querySelectorAll('.pay-method').forEach(m => m.classList.remove('active'));
+  el.classList.add('active');
+  selectedMethod = method;
+  document.getElementById('card-form').style.display       = method === 'card'        ? 'block' : 'none';
+  document.getElementById('upi-form').style.display        = method === 'upi'         ? 'block' : 'none';
+  document.getElementById('netbanking-form').style.display = method === 'net_banking'  ? 'block' : 'none';
+}
+
+// ── Card number formatter ─────────────────────────────────────────────────────
+function formatCard(input) {
+  let v = input.value.replace(/\D/g, '').substring(0, 16);
+  input.value = v.replace(/(\d{4})(?=\d)/g, '$1 ');
+}
+
+function formatExpiry(input) {
+  let v = input.value.replace(/\D/g, '').substring(0, 4);
+  if (v.length > 2) v = v.substring(0, 2) + ' / ' + v.substring(2);
+  input.value = v;
+}
+
+// ── Process Payment ───────────────────────────────────────────────────────────
+async function processPayment() {
+  if (!regId) {
+    showToast('Missing registration ID. Please go back and try again.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('btnPay');
+  btn.disabled    = true;
+  btn.textContent = 'Processing…';
+
+  try {
+    // Step 1: Initiate payment → get transaction_id from backend
+    const initRes  = await api.initiatePayment(parseInt(regId), selectedMethod);
+    const initData = await initRes.json();
+
+    if (!initRes.ok) {
+      showToast(initData.detail || 'Could not initiate payment.', 'error');
+      btn.disabled    = false;
+      btn.textContent = '🔒 Pay & Confirm';
+      return;
+    }
+
+    transactionId = initData.transaction_id;
+
+    // Step 2: Simulate payment gateway processing
+    // In production: open Razorpay / Stripe widget here using transactionId
+    // For now: simulate a 1.5s processing delay then confirm success
+    btn.textContent = '⏳ Processing payment…';
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Step 3: Confirm payment with backend
+    const confirmRes  = await api.confirmPayment(transactionId, 'demo_gateway_ref_' + Date.now(), true);
+    const confirmData = await confirmRes.json();
+
+    if (!confirmRes.ok) {
+      showToast(confirmData.detail || 'Payment confirmation failed.', 'error');
+      btn.disabled    = false;
+      btn.textContent = '🔒 Pay & Confirm';
+      return;
+    }
+
+    // Step 4: Show success
+    document.getElementById('successText').textContent =
+      `Your registration for "${eventTitle}" is confirmed! Ref: ${confirmData.registration_ref}`;
+    document.getElementById('successOverlay').classList.add('show');
+
+  } catch (e) {
+    showToast('Something went wrong. Please try again.', 'error');
+    btn.disabled    = false;
+    btn.textContent = '🔒 Pay & Confirm';
+  }
+}
+</script>
+</body>
+</html>
