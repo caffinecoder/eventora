@@ -2,21 +2,19 @@
 Eventora — Django Settings
 """
 
-
 from pathlib import Path
 from datetime import timedelta
 from decouple import config
-import dj_database_url  
-
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# ── Security ─────────────────────────────────────────────────────────────────
-SECRET_KEY = config('SECRET_KEY', default='change-me-in-production')
-DEBUG = config('DEBUG', default=True, cast=bool)
+# ── Security ──────────────────────────────────────────────────────────────────
+SECRET_KEY = config('SECRET_KEY')
+DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 
-# ── Installed Apps ────────────────────────────────────────────────────────────
+# ── Installed Apps ─────────────────────────────────────────────────────────────
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -38,14 +36,14 @@ INSTALLED_APPS = [
     'apps.payments',
 ]
 
-# ── Middleware ────────────────────────────────────────────────────────────────
+# ── Middleware ─────────────────────────────────────────────────────────────────
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',        # must be first
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -71,19 +69,22 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'eventora.wsgi.application'
 
-import dj_database_url
+# ── Database ───────────────────────────────────────────────────────────────────
+# Reads DATABASE_URL from environment — no SQLite fallback on purpose
+DATABASE_URL = config('DATABASE_URL')
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default=config('DATABASE_URL', default=f'sqlite:///{BASE_DIR / "db.sqlite3"}'),
+    'default': dj_database_url.parse(
+        DATABASE_URL,
         conn_max_age=600,
+        ssl_require=True,
     )
 }
 
-# ── Custom User Model ─────────────────────────────────────────────────────────
+# ── Custom User Model ──────────────────────────────────────────────────────────
 AUTH_USER_MODEL = 'accounts.User'
 
-# ── Password Validation ───────────────────────────────────────────────────────
+# ── Password Validation ────────────────────────────────────────────────────────
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -91,21 +92,22 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# ── Internationalisation ──────────────────────────────────────────────────────
+# ── Internationalisation ───────────────────────────────────────────────────────
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Kolkata'
 USE_I18N = True
 USE_TZ = True
 
-# ── Static & Media ────────────────────────────────────────────────────────────
+# ── Static & Media ─────────────────────────────────────────────────────────────
 STATIC_URL  = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL   = '/media/'
 MEDIA_ROOT  = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ── Django REST Framework ─────────────────────────────────────────────────────
+# ── Django REST Framework ──────────────────────────────────────────────────────
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -120,17 +122,17 @@ REST_FRAMEWORK = {
     ),
 }
 
-# ── JWT Settings ──────────────────────────────────────────────────────────────
+# ── JWT Settings ───────────────────────────────────────────────────────────────
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME':  timedelta(minutes=config('ACCESS_TOKEN_LIFETIME_MINUTES', default=60,  cast=int)),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=config('REFRESH_TOKEN_LIFETIME_DAYS',    default=7,   cast=int)),
+    'ACCESS_TOKEN_LIFETIME':  timedelta(minutes=config('ACCESS_TOKEN_LIFETIME_MINUTES', default=1440, cast=int)),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=config('REFRESH_TOKEN_LIFETIME_DAYS', default=7, cast=int)),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'AUTH_HEADER_TYPES': ('Bearer',),
     'TOKEN_OBTAIN_PAIR_SERIALIZER': 'apps.accounts.serializers.CustomTokenObtainPairSerializer',
 }
 
-# ── CORS ──────────────────────────────────────────────────────────────────────
+# ── CORS ───────────────────────────────────────────────────────────────────────
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
     default='http://localhost:3000,http://127.0.0.1:5500'
